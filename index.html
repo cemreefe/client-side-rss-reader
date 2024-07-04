@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple RSS Aggregator</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/rss-parser/dist/rss-parser.min.js"></script>
+  <link rel="icon" type="image/png" href="https://emoji.dutl.uk/png/64x64/🛜.png">
+  <style>
+    #app {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      margin-bottom: 10px;
+    }
+    .feed-item {
+      margin-bottom: 20px;
+    }
+    .description {
+      margin-top: 10px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      max-height: 80vh;
+      overflow-y: scroll;
+    }
+    .meta {
+      font-size: 0.9em;
+      color: #555;
+    }
+    #form {
+      margin-bottom:1em;
+    }
+    a {
+      color: blue;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Simple RSS Aggregator</h1>
+
+    <small>a <a href="https://www.dutl.uk/">dutl.uk</a> app</small><br><br>
+
+    <div id="form">
+      <textarea v-model="rssInput" placeholder="Enter RSS feeds separated by a comma"></textarea>
+      <button @click="fetchFeeds">Fetch Feeds</button>
+      <button id="bookmarkMeButton">Bookmark Me</button>
+    </div>
+
+    <div v-if="loading">Loading...</div>
+    <div v-if="error">{{ error }}</div>
+    
+    <div v-for="(item, index) in sortedFeeds" :key="index" class="feed-item">
+      <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
+      <a href="#" @click.prevent="showDescription(item)">{{ item.title }}</a>
+      <div v-if="item.showDescription" class="description">
+        <div v-html="item.content"></div>
+        <button @click="closeDescription(item)">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        rssInput: '',
+        feeds: [],
+        loading: false,
+        error: null,
+      },
+      computed: {
+        sortedFeeds() {
+          return this.feeds.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+        },
+      },
+      methods: {
+        async fetchFeeds() {
+          this.loading = true;
+          this.error = null;
+          this.feeds = [];
+          const parser = new RSSParser();
+          const urls = this.rssInput.split(',').map(url => url.trim());
+
+          // Update the URL with query parameters
+          const queryParams = { feeds: urls };
+          const queryString = new URLSearchParams(queryParams).toString();
+          history.replaceState(null, null, `?${queryString}`);
+
+          try {
+            const feedPromises = urls.map(url => axios.get(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`)
+              .then(response => parser.parseString(response.data))
+            );
+            const feedResults = await Promise.all(feedPromises);
+
+            feedResults.forEach(feed => {
+              this.feeds = this.feeds.concat(feed.items.map(item => ({
+                title: item.title,
+                link: item.link,
+                pubDate: item.pubDate,
+                content: item.content,
+                feedTitle: feed.title,
+                showDescription: false,
+              })));
+            });
+          } catch (err) {
+            this.error = 'Failed to fetch feeds. Please check the URLs and try again.';
+          } finally {
+            this.loading = false;
+          }
+        },
+        showDescription(item) {
+          this.feeds = this.feeds.map(feedItem => ({
+            ...feedItem,
+            showDescription: feedItem === item ? !feedItem.showDescription : feedItem.showDescription,
+          }));
+        },
+        closeDescription(item) {
+          item.showDescription = false;
+        },
+        formatDate(dateString) {
+          const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+          return new Date(dateString).toLocaleDateString(undefined, options);
+        },
+        loadFeedsFromQuery() {
+          const urlParams = new URLSearchParams(window.location.search);
+          const feeds = urlParams.get('feeds');
+          if (feeds) {
+            this.rssInput = feeds.split(',').join(', ');
+            this.fetchFeeds();
+          }
+        }
+      },
+      mounted() {
+        this.loadFeedsFromQuery();
+      }
+    });
+
+    document.getElementById('bookmarkMeButton').addEventListener('click', function(e) {
+      e.preventDefault();
+      var bookmarkURL = window.location.href;
+      var bookmarkTitle = document.title;
+
+      if ('addToHomescreen' in window && window.addToHomescreen.isCompatible) {
+        // Mobile browsers
+        addToHomescreen({ autostart: false, startDelay: 0 }).show(true);
+      } else if (window.sidebar && window.sidebar.addPanel) {
+        // Firefox version < 23
+        window.sidebar.addPanel(bookmarkTitle, bookmarkURL, '');
+      } else if ((window.sidebar && /Firefox/i.test(navigator.userAgent)) || (window.opera && window.print)) {
+        // Firefox version >= 23 and Opera Hotlist
+        this.setAttribute('href', bookmarkURL);
+        this.setAttribute('title', bookmarkTitle);
+        this.setAttribute('rel', 'sidebar');
+      } else if (window.external && ('AddFavorite' in window.external)) {
+        // IE Favorite
+        window.external.AddFavorite(bookmarkURL, bookmarkTitle);
+      } else {
+        // Other browsers (mainly WebKit - Chrome/Safari)
+        alert('Please press ' + (/Mac/i.test(navigator.userAgent) ? 'CMD' : 'Ctrl') + ' + D to bookmark this page.');
+      }
+    });
+  </script>
+</body>
+</html>
