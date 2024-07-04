@@ -1,5 +1,7 @@
 # Simple Client-Side RSS Aggregator
 
+Live on https://rss-reader.dutl.uk/ !
+
 A simple client-side RSS aggregator built with Vue.js. This application allows users to enter multiple RSS feed URLs, fetches and aggregates the feeds, sorts the posts by date, and displays the most recent posts first. It also allows users to bookmark the page with the current RSS feeds.
 
 ## Features
