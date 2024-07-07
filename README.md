@@ -1,4 +1,4 @@
-# Simple Client-Side RSS Aggregator
+# Simple Client-Side RSS Reader
 
 Live on https://rss-reader.dutl.uk/ !
 
