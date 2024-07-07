@@ -44,14 +44,14 @@
       color: royalblue;
     }
     blockquote {
-    border-left: 0.2em solid #88888888;
+      border-left: 0.2em solid #88888888;
       padding-left: 0.5em;
       margin-left: 1em;
       font-style: italic;
       font-family: auto;
     }
     .post-title {
-      text-decoration: unset
+      text-decoration: unset;
     }
     table, th, td {
       border: 1px solid #aaa;
@@ -81,6 +81,7 @@
       <a  href="#" @click.prevent="showDescription(item)" class="post-title">{{ item.title }}</a>
       <div v-if="item.showDescription" class="description">
         <div v-html="item.content"></div>
+        <a :href="item.link" target="_blank">Read on {{ item.feedTitle }}</a>
         <button @click="closeDescription(item)">Close</button>
       </div>
     </div>
