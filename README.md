@@ -16,8 +16,8 @@ A simple client-side RSS aggregator built with Vue.js. This application allows u
 
 1. **Clone the repository**:
    ```sh
-   git clone https://github.com/cemreefe/client-side-rss-aggregator.git
-   cd rss-aggregator
+   git clone https://github.com/cemreefe/client-side-rss-reader.git
+   cd client-side-rss-reader
    ```
 
 2. **Open the `index.html` file in your browser**:
