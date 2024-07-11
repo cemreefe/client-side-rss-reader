@@ -117,23 +117,25 @@
           history.replaceState(null, null, `?${queryString}`);
 
           try {
-            const feedPromises = urls.map(url => axios.get(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`)
-              .then(response => parser.parseString(response.data))
-            );
-            const feedResults = await Promise.all(feedPromises);
-
-            feedResults.forEach(feed => {
-              this.feeds = this.feeds.concat(feed.items.map(item => ({
-                title: item.title,
-                link: item.link,
-                pubDate: item.pubDate,
-                content: item.content,
-                feedTitle: feed.title,
-                showDescription: false,
-              })));
+            const feedPromises = urls.map(async (url) => {
+              try {
+                const response = await axios.get(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+                const feed = await parser.parseString(response.data);
+                this.feeds = this.feeds.concat(feed.items.map(item => ({
+                  title: item.title,
+                  link: item.link,
+                  pubDate: item.pubDate,
+                  content: item.content,
+                  feedTitle: feed.title,
+                  showDescription: false,
+                })));
+              } catch (err) {
+                console.error(`Failed to fetch feed from ${url}`, err);
+              }
             });
+            await Promise.all(feedPromises);
           } catch (err) {
-            this.error = 'Failed to fetch feeds. Please check the URLs and try again.';
+            this.error = 'Failed to fetch some feeds. Please check the console for details.';
           } finally {
             this.loading = false;
           }
