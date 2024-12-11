@@ -89,7 +89,6 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-5BQYC3C8BL');
   </script>
 </head>
@@ -101,7 +100,7 @@
       <small>a <a href="https://www.dutl.uk/">dutl.uk</a> app. see my source code <a href="https://github.com/cemreefe/client-side-rss-reader">here</a></small><br><br>
 
       <div id="form">
-        <textarea v-model="rssInput" placeholder="Enter RSS feeds separated by a comma"></textarea>
+        <textarea v-model="rssInput"  @input="updateUrlParams" placeholder="Enter RSS feeds separated by a comma"></textarea>
         <button @click="fetchFeeds">Fetch Feeds</button>
         <button id="bookmarkMeButton">Bookmark Me</button>
         <button @click="toggleAdvancedSettings">Advanced Settings</button>
@@ -138,6 +137,7 @@
 
       <div v-if="loading">Loading...</div>
       <div v-if="error">{{ error }}</div>
+      <br>
 
       <div v-for="(item, index) in paginatedFeeds" :key="index" class="feed-item">
         <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
@@ -205,7 +205,10 @@
           return this.filteredFeeds.slice(start, start + this.pageSize);
         },
         filteredFeeds() {
-          const blocks = isBlank(blocklist) ? this.blocklist.split(',').map(word => word.trim().toLowerCase()) : [];
+          if (isBlank(this.blocklist)) {
+            return this.sortedFeeds;
+          }
+          const blocks = this.blocklist.split(',').map(word => word.trim().toLowerCase());
           return this.sortedFeeds.filter(feed => {
             const content = `${feed.title} ${feed.content}`.toLowerCase();
             return !blocks.some(block => content.includes(block));
@@ -228,44 +231,47 @@
           const urls = this.rssInput.split(',').map(url => url.trim());
 
           const fetchFeed = async (url) => {
-            const cachedFeed = getCache(url, this.cacheTTL);
-            if (cachedFeed) {
-              console.log(`Using cached feed for ${url}`);
-              return cachedFeed.items.map(item => ({
+            try {
+              const cachedFeed = getCache(url, this.cacheTTL);
+              if (cachedFeed) {
+                console.log(`Using cached feed for ${url}`);
+                this.unfilteredFeeds.push(...cachedFeed.items.map(item => ({
+                  title: item.title,
+                  link: item.link,
+                  pubDate: item.pubDate,
+                  content: item.content,
+                  feedTitle: cachedFeed.title,
+                  showDescription: false,
+                })));
+                this.updateFilteredFeeds(); // Update the filtered feeds whenever new data is added
+                return;
+              }
+
+              const response = await axios.get(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+              const feed = await parser.parseString(response.data);
+              setCache(url, feed);
+
+              this.unfilteredFeeds.push(...feed.items.map(item => ({
                 title: item.title,
                 link: item.link,
                 pubDate: item.pubDate,
                 content: item.content,
-                feedTitle: cachedFeed.title,
+                feedTitle: feed.title,
                 showDescription: false,
-              }));
-            }
-
-            const response = await axios.get(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-            const feed = await parser.parseString(response.data);
-            setCache(url, feed);
-            return feed.items.map(item => ({
-              title: item.title,
-              link: item.link,
-              pubDate: item.pubDate,
-              content: item.content,
-              feedTitle: feed.title,
-              showDescription: false,
-            }));
-          };
-
-          const feedPromises = urls.map(async (url) => {
-            try {
-              const newFeeds = await fetchFeed(url);
-              this.unfilteredFeeds = [...this.unfilteredFeeds, ...newFeeds]; // Update unfiltered results
+              })));
+              this.updateFilteredFeeds(); // Update the filtered feeds as we go
             } catch (err) {
               console.error(`Failed to fetch feed from ${url}:`, err);
             }
-          });
+          };
 
-          await Promise.allSettled(feedPromises);
-          this.updateFilteredFeeds(); // Apply blocklist filtering dynamically
-          this.loading = false;
+          // Fetch all feeds asynchronously but render progressively
+          const feedPromises = urls.map(url => fetchFeed(url));
+
+          // Wait for all feed fetches to finish
+          await Promise.all(feedPromises);
+
+          this.loading = false; // Set loading to false after all feeds have been processed
         },
         updateFilteredFeeds() {
           const blocks = isBlank(this.blocklist) ? [] : this.blocklist.split(',').map(word => word.trim().toLowerCase());
@@ -322,7 +328,9 @@
 
     document.getElementById('bookmarkMeButton').addEventListener('click', function(e) {
       e.preventDefault();
-      const message = `To bookmark this page, press ${/Mac/i.test(navigator.userAgent) ? 'CMD' : 'Ctrl'} + D on your keyboard.`;
+      const message = `To bookmark this page in your browser:  
+      \n1. Press CTRL + D (Windows/Linux) or Command + D (Mac). 
+      \n2. Choose a folder for saving the bookmark.`;
       alert(message);
     });
   </script>
