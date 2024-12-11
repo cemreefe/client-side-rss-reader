@@ -64,14 +64,28 @@
       padding: 0.5em;
       width: -webkit-fill-available;
     }
+    .pagination {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #advanced-settings {
+      display: none;
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #aaa;
+    }
+    #advanced-settings table, #advanced-settings td {
+      border: none;
+    }
   </style>
-  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-5BQYC3C8BL"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-  
+
     gtag('config', 'G-5BQYC3C8BL');
   </script>
 </head>
@@ -85,23 +99,88 @@
       <textarea v-model="rssInput" placeholder="Enter RSS feeds separated by a comma"></textarea>
       <button @click="fetchFeeds">Fetch Feeds</button>
       <button id="bookmarkMeButton">Bookmark Me</button>
+      <button @click="toggleAdvancedSettings">Advanced Settings</button>
     </div>
+
+    <div id="advanced-settings">
+      <b>Advanced Settings</b>
+      <br>
+      <table>
+        <tr>
+          <td>
+            <label for="cache-ttl">Cache TTL (minutes):</label>
+          </td>
+          <td>
+            <input type="number" id="cache-ttl" v-model.number="cacheTTL" @input="updateUrlParams">
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label for="blocklist">Blocklist (comma-separated):</label>
+          </td>
+          <td>
+            <input type="text" id="blocklist" v-model="blocklist" @input="updateUrlParams">
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <button @click="invalidateCache">Invalidate Cache</button>
+          </td>
+        </tr>
+      </table>
+    </div>
+    
 
     <div v-if="loading">Loading...</div>
     <div v-if="error">{{ error }}</div>
-    
-    <div v-for="(item, index) in sortedFeeds" :key="index" class="feed-item">
+
+    <div v-for="(item, index) in paginatedFeeds" :key="index" class="feed-item">
       <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
-      <a  href="#" @click.prevent="showDescription(item)" class="post-title">{{ item.title }}</a>
+      <a href="#" @click.prevent="showDescription(item)" class="post-title">{{ item.title }}</a>
       <div v-if="item.showDescription" class="description">
         <div v-html="item.content"></div>
         <a :href="item.link" target="_blank">Read on {{ item.feedTitle }}</a>
         <button @click="closeDescription(item)">Close</button>
       </div>
     </div>
+
+    <div v-if="totalPages > 1" class="pagination">
+      <button @click="currentPage--" :disabled="currentPage === 1">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+      <button @click="currentPage++" :disabled="currentPage === totalPages">Next</button>
+    </div>
   </div>
 
   <script>
+    function isBlank(str) {
+        return (!str || /^\s*$/.test(str));
+    }
+    function getCacheKey(url) {
+      return `rss_cache_${btoa(url)}`;
+    }
+
+    function setCache(url, data) {
+      const cacheKey = getCacheKey(url);
+      const cachedData = {
+        timestamp: Date.now(),
+        data,
+      };
+      localStorage.setItem(cacheKey, JSON.stringify(cachedData));
+    }
+
+    function getCache(url, ttl) {
+      const cacheKey = getCacheKey(url);
+      const cachedData = localStorage.getItem(cacheKey);
+      if (!cachedData) return null;
+
+      const parsedData = JSON.parse(cachedData);
+      if (Date.now() - parsedData.timestamp > ttl * 60 * 1000) {
+        localStorage.removeItem(cacheKey);
+        return null;
+      }
+      return parsedData.data;
+    }
+
     new Vue({
       el: '#app',
       data: {
@@ -109,10 +188,29 @@
         feeds: [],
         loading: false,
         error: null,
+        currentPage: 1,
+        pageSize: 10,
+        cacheTTL: 30, // Default TTL in minutes
+        blocklist: '', // Default blocklist
+        advancedSettingsVisible: false,
       },
       computed: {
+        paginatedFeeds() {
+          const start = (this.currentPage - 1) * this.pageSize;
+          return this.filteredFeeds.slice(start, start + this.pageSize);
+        },
+        filteredFeeds() {
+          const blocks = isBlank(blocklist) ? this.blocklist.split(',').map(word => word.trim().toLowerCase()) : [];
+          return this.sortedFeeds.filter(feed => {
+            const content = `${feed.title} ${feed.content}`.toLowerCase();
+            return !blocks.some(block => content.includes(block));
+          });
+        },
         sortedFeeds() {
           return this.feeds.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+        },
+        totalPages() {
+          return Math.ceil(this.filteredFeeds.length / this.pageSize);
         },
       },
       methods: {
@@ -123,34 +221,52 @@
           const parser = new RSSParser();
           const urls = this.rssInput.split(',').map(url => url.trim());
 
-          // Update the URL with query parameters
-          const queryParams = { feeds: urls };
+          const queryParams = { feeds: urls, ttl: this.cacheTTL, blocklist: this.blocklist };
           const queryString = new URLSearchParams(queryParams).toString();
           history.replaceState(null, null, `?${queryString}`);
 
-          try {
-            const feedPromises = urls.map(async (url) => {
-              try {
-                const response = await axios.get(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-                const feed = await parser.parseString(response.data);
-                this.feeds = this.feeds.concat(feed.items.map(item => ({
-                  title: item.title,
-                  link: item.link,
-                  pubDate: item.pubDate,
-                  content: item.content,
-                  feedTitle: feed.title,
-                  showDescription: false,
-                })));
-              } catch (err) {
-                console.error(`Failed to fetch feed from ${url}`, err);
-              }
-            });
-            await Promise.all(feedPromises);
-          } catch (err) {
-            this.error = 'Failed to fetch some feeds. Please check the console for details.';
-          } finally {
-            this.loading = false;
-          }
+          const fetchFeed = async (url) => {
+            const cachedFeed = getCache(url, this.cacheTTL);
+            if (cachedFeed) {
+              console.log(`Using cached feed for ${url}`);
+              return cachedFeed.items.map(item => ({
+                title: item.title,
+                link: item.link,
+                pubDate: item.pubDate,
+                content: item.content,
+                feedTitle: cachedFeed.title,
+                showDescription: false,
+              }));
+            }
+
+            const response = await axios.get(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+            const feed = await parser.parseString(response.data);
+            setCache(url, feed);
+            return feed.items.map(item => ({
+              title: item.title,
+              link: item.link,
+              pubDate: item.pubDate,
+              content: item.content,
+              feedTitle: feed.title,
+              showDescription: false,
+            }));
+          };
+
+          const updateFeeds = (newFeeds) => {
+            this.feeds = [...this.feeds, ...newFeeds];
+          };
+
+          const feedPromises = urls.map(async (url) => {
+            try {
+              const newFeeds = await fetchFeed(url);
+              updateFeeds(newFeeds);
+            } catch (err) {
+              console.error(`Failed to fetch feed from ${url}:`, err);
+            }
+          });
+
+          await Promise.allSettled(feedPromises);
+          this.loading = false;
         },
         showDescription(item) {
           this.feeds = this.feeds.map(feedItem => ({
@@ -170,38 +286,38 @@
           const feeds = urlParams.get('feeds');
           if (feeds) {
             this.rssInput = feeds.split(',').join(', ');
+            this.cacheTTL = Number(urlParams.get('ttl')) || this.cacheTTL;
+            this.blocklist = urlParams.get('blocklist') || this.blocklist;
             this.fetchFeeds();
           }
-        }
+        },
+        invalidateCache() {
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('rss_cache_')) {
+              localStorage.removeItem(key);
+            }
+          });
+          alert('Cache invalidated.');
+        },
+        toggleAdvancedSettings() {
+          this.advancedSettingsVisible = !this.advancedSettingsVisible;
+          document.getElementById('advanced-settings').style.display = this.advancedSettingsVisible ? 'block' : 'none';
+        },
+        updateUrlParams() {
+          const queryParams = { feeds: this.rssInput.split(',').map(url => url.trim()), ttl: this.cacheTTL, blocklist: this.blocklist };
+          const queryString = new URLSearchParams(queryParams).toString();
+          history.replaceState(null, null, `?${queryString}`);
+        },
       },
       mounted() {
         this.loadFeedsFromQuery();
-      }
+      },
     });
 
     document.getElementById('bookmarkMeButton').addEventListener('click', function(e) {
       e.preventDefault();
-      var bookmarkURL = window.location.href;
-      var bookmarkTitle = document.title;
-
-      if ('addToHomescreen' in window && window.addToHomescreen.isCompatible) {
-        // Mobile browsers
-        addToHomescreen({ autostart: false, startDelay: 0 }).show(true);
-      } else if (window.sidebar && window.sidebar.addPanel) {
-        // Firefox version < 23
-        window.sidebar.addPanel(bookmarkTitle, bookmarkURL, '');
-      } else if ((window.sidebar && /Firefox/i.test(navigator.userAgent)) || (window.opera && window.print)) {
-        // Firefox version >= 23 and Opera Hotlist
-        this.setAttribute('href', bookmarkURL);
-        this.setAttribute('title', bookmarkTitle);
-        this.setAttribute('rel', 'sidebar');
-      } else if (window.external && ('AddFavorite' in window.external)) {
-        // IE Favorite
-        window.external.AddFavorite(bookmarkURL, bookmarkTitle);
-      } else {
-        // Other browsers (mainly WebKit - Chrome/Safari)
-        alert('Please press ' + (/Mac/i.test(navigator.userAgent) ? 'CMD' : 'Ctrl') + ' + D to bookmark this page.');
-      }
+      const message = `To bookmark this page, press ${/Mac/i.test(navigator.userAgent) ? 'CMD' : 'Ctrl'} + D on your keyboard.`;
+      alert(message);
     });
   </script>
 </body>
