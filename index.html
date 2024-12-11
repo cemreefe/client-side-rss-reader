@@ -42,9 +42,6 @@
       font-size: 0.9em;
       color: #555;
     }
-    #form {
-      margin-bottom:1em;
-    }
     a {
       color: royalblue;
     }
@@ -100,15 +97,16 @@
       <small>a <a href="https://www.dutl.uk/">dutl.uk</a> app. see my source code <a href="https://github.com/cemreefe/client-side-rss-reader">here</a></small><br><br>
 
       <div id="form">
-        <details>
-          <summary style="margin-bottom:1em; cursor:pointer;">
-            Feeds
-          </summary>
-          <textarea v-model="rssInput"  @input="updateUrlParams" placeholder="Enter RSS feeds separated by a comma"></textarea>  
-        </details>
         <button @click="fetchFeeds">Fetch Feeds</button>
         <button id="bookmarkMeButton">Bookmark Me</button>
         <button @click="toggleAdvancedSettings">Advanced Settings</button>
+        <details>
+          <summary style="margin-top:1em; cursor:pointer;">
+            Feeds
+          </summary>
+          <br>
+          <textarea v-model="rssInput"  @input="updateUrlParams" placeholder="Enter RSS feeds separated by a comma"></textarea>  
+        </details>
       </div>
 
       <div id="advanced-settings">
