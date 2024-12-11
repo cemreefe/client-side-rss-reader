@@ -100,7 +100,12 @@
       <small>a <a href="https://www.dutl.uk/">dutl.uk</a> app. see my source code <a href="https://github.com/cemreefe/client-side-rss-reader">here</a></small><br><br>
 
       <div id="form">
-        <textarea v-model="rssInput"  @input="updateUrlParams" placeholder="Enter RSS feeds separated by a comma"></textarea>
+        <details>
+          <summary style="margin-bottom:1em; cursor:pointer;">
+            Feeds
+          </summary>
+          <textarea v-model="rssInput"  @input="updateUrlParams" placeholder="Enter RSS feeds separated by a comma"></textarea>  
+        </details>
         <button @click="fetchFeeds">Fetch Feeds</button>
         <button id="bookmarkMeButton">Bookmark Me</button>
         <button @click="toggleAdvancedSettings">Advanced Settings</button>
