@@ -72,13 +72,17 @@
     }
     #advanced-settings {
       display: none;
-      margin-top: 20px;
+      margin-top: 1em;
+      margin-bottom:1em;
       padding: 10px;
       border: 1px solid #aaa;
     }
     #advanced-settings table, #advanced-settings td {
       border: none;
     }
+    #before-buttons {
+      min-height: 70vh;
+    } 
   </style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-5BQYC3C8BL"></script>
   <script>
@@ -91,59 +95,60 @@
 </head>
 <body>
   <div id="app">
-    <h1>Simple RSS Reader</h1>
+    <div id="before-buttons">
+      <h1>Simple RSS Reader</h1>
 
-    <small>a <a href="https://www.dutl.uk/">dutl.uk</a> app. see my source code <a href="https://github.com/cemreefe/client-side-rss-reader">here</a></small><br><br>
+      <small>a <a href="https://www.dutl.uk/">dutl.uk</a> app. see my source code <a href="https://github.com/cemreefe/client-side-rss-reader">here</a></small><br><br>
 
-    <div id="form">
-      <textarea v-model="rssInput" placeholder="Enter RSS feeds separated by a comma"></textarea>
-      <button @click="fetchFeeds">Fetch Feeds</button>
-      <button id="bookmarkMeButton">Bookmark Me</button>
-      <button @click="toggleAdvancedSettings">Advanced Settings</button>
-    </div>
+      <div id="form">
+        <textarea v-model="rssInput" placeholder="Enter RSS feeds separated by a comma"></textarea>
+        <button @click="fetchFeeds">Fetch Feeds</button>
+        <button id="bookmarkMeButton">Bookmark Me</button>
+        <button @click="toggleAdvancedSettings">Advanced Settings</button>
+      </div>
 
-    <div id="advanced-settings">
-      <b>Advanced Settings</b>
-      <br>
-      <table>
-        <tr>
-          <td>
-            <label for="cache-ttl">Cache TTL (minutes):</label>
-          </td>
-          <td>
-            <input type="number" id="cache-ttl" v-model.number="cacheTTL" @input="updateUrlParams">
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <label for="blocklist">Blocklist (comma-separated):</label>
-          </td>
-          <td>
-            <input type="text" id="blocklist" v-model="blocklist" @input="updateUrlParams">
-          </td>
-        </tr>
-        <tr>
-          <td colspan="2">
-            <button @click="invalidateCache">Invalidate Cache</button>
-          </td>
-        </tr>
-      </table>
-    </div>
-    
+      <div id="advanced-settings">
+        <b>Advanced Settings</b>
+        <br>
+        <table>
+          <tr>
+            <td>
+              <label for="cache-ttl">Cache TTL (minutes):</label>
+            </td>
+            <td>
+              <input type="number" id="cache-ttl" v-model.number="cacheTTL" @input="updateUrlParams">
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <label for="blocklist">Blocklist (comma-separated):</label>
+            </td>
+            <td>
+              <input type="text" id="blocklist" v-model="blocklist" @input="updateUrlParams">
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2">
+              <button @click="invalidateCache">Invalidate Cache</button>
+            </td>
+          </tr>
+        </table>
+      </div>
+      
 
-    <div v-if="loading">Loading...</div>
-    <div v-if="error">{{ error }}</div>
+      <div v-if="loading">Loading...</div>
+      <div v-if="error">{{ error }}</div>
 
-    <div v-for="(item, index) in paginatedFeeds" :key="index" class="feed-item">
-      <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
-      <a href="#" @click.prevent="showDescription(item)" class="post-title">{{ item.title }}</a>
-      <div v-if="item.showDescription" class="description">
-        <div v-html="item.content"></div>
-        <a :href="item.link" target="_blank">Read on {{ item.feedTitle }}</a>
-        <button @click="closeDescription(item)">Close</button>
+      <div v-for="(item, index) in paginatedFeeds" :key="index" class="feed-item">
+        <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
+        <a href="#" @click.prevent="showDescription(item)" class="post-title">{{ item.title }}</a>
+        <div v-if="item.showDescription" class="description">
+          <div v-html="item.content"></div>
+          <a :href="item.link" target="_blank">Read on {{ item.feedTitle }}</a>
+          <button @click="closeDescription(item)">Close</button>
+        </div>
       </div>
     </div>
-
     <div v-if="totalPages > 1" class="pagination">
       <button @click="currentPage--" :disabled="currentPage === 1">Previous</button>
       <span>Page {{ currentPage }} of {{ totalPages }}</span>
@@ -218,12 +223,9 @@
           this.loading = true;
           this.error = null;
           this.feeds = [];
+          this.unfilteredFeeds = []; // Clear unfiltered results
           const parser = new RSSParser();
           const urls = this.rssInput.split(',').map(url => url.trim());
-
-          const queryParams = { feeds: urls, ttl: this.cacheTTL, blocklist: this.blocklist };
-          const queryString = new URLSearchParams(queryParams).toString();
-          history.replaceState(null, null, `?${queryString}`);
 
           const fetchFeed = async (url) => {
             const cachedFeed = getCache(url, this.cacheTTL);
@@ -252,21 +254,25 @@
             }));
           };
 
-          const updateFeeds = (newFeeds) => {
-            this.feeds = [...this.feeds, ...newFeeds];
-          };
-
           const feedPromises = urls.map(async (url) => {
             try {
               const newFeeds = await fetchFeed(url);
-              updateFeeds(newFeeds);
+              this.unfilteredFeeds = [...this.unfilteredFeeds, ...newFeeds]; // Update unfiltered results
             } catch (err) {
               console.error(`Failed to fetch feed from ${url}:`, err);
             }
           });
 
           await Promise.allSettled(feedPromises);
+          this.updateFilteredFeeds(); // Apply blocklist filtering dynamically
           this.loading = false;
+        },
+        updateFilteredFeeds() {
+          const blocks = isBlank(this.blocklist) ? [] : this.blocklist.split(',').map(word => word.trim().toLowerCase());
+          this.feeds = this.unfilteredFeeds.filter(feed => {
+            const content = `${feed.title} ${feed.content}`.toLowerCase();
+            return !blocks.some(block => content.includes(block));
+          });
         },
         showDescription(item) {
           this.feeds = this.feeds.map(feedItem => ({
