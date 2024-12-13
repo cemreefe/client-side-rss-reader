@@ -138,8 +138,8 @@
       </div>
       
 
-      <div v-if="loading">Loading...</div>
-      <div v-if="error">{{ error }}</div>
+      <div v-if="loading" style="margin-top:1em;">Loading...</div>
+      <div v-if="error" style="margin-top:1em;">{{ error }}</div>
       <br>
 
       <div v-for="(item, index) in paginatedFeeds" :key="index" class="feed-item">
