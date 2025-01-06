@@ -134,6 +134,11 @@
               <button @click="invalidateCache">Invalidate Cache</button>
             </td>
           </tr>
+          <tr>
+            <td>
+              <button id="toggleDarkMode">Toggle Dark Mode</button>
+            </td>
+          </tr>
         </table>
       </div>
       
@@ -335,6 +340,21 @@
       \n1. Press CTRL + D (Windows/Linux) or Command + D (Mac). 
       \n2. Choose a folder for saving the bookmark.`;
       alert(message);
+    });
+    var darkModeEnabled = false;
+    document.getElementById('toggleDarkMode').addEventListener('click', function(e) {
+      e.preventDefault();
+      if (!darkModeEnabled){
+        document.body.style.color = 'whitesmoke';
+        document.body.style.backgroundColor = 'black';  
+        darkModeEnabled = true; 
+      }
+      else {
+        document.body.style.color = 'black';
+        document.body.style.backgroundColor = 'white';
+        darkModeEnabled = false;
+      }
+
     });
   </script>
 </body>
