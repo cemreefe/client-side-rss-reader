@@ -18,6 +18,8 @@
     }
     h1 {
       font-size: 1.5em;
+    }
+    .header {
       border-bottom: 1px solid #c9c9c9;
     }
     textarea {
@@ -98,20 +100,23 @@
 <body>
   <div id="app">
     <div id="before-buttons">
-      <h1>RSS Reader</h1>
+      <div class="header">
+        <h1 style="display:inline-block;width:100%;max-width:40%;" align="left;">Simple RSS Reader</h1>
+        <div style="display:inline-block;width:100%;max-width:59%;" align="right">
+          <button @click="fetchFeeds">Fetch Feeds</button>
+          <button id="bookmarkMeButton">Bookmark Me</button>
+          <button @click="toggleAdvancedSettings">Advanced Settings</button>
+        </div>
+      </div>
 
       <small>a <a href="https://www.dutl.uk/">dutl.uk</a> app. see my source code <a href="https://github.com/cemreefe/client-side-rss-reader">here</a></small><br><br>
-
       <div id="form">
-        <button @click="fetchFeeds">Fetch Feeds</button>
-        <button id="bookmarkMeButton">Bookmark Me</button>
-        <button @click="toggleAdvancedSettings">Advanced Settings</button>
-        <details>
-          <summary style="margin-top:1em; cursor:pointer;">
+        <details id="feedDetails">
+          <summary style="cursor:pointer;">
             Feeds
           </summary>
           <br>
-          <textarea v-model="rssInput"  @input="updateUrlParams" placeholder="Enter RSS feeds separated by a comma"></textarea>  
+          <textarea id="rssInput" v-model="rssInput"  @input="updateUrlParams" placeholder="Enter RSS feeds separated by a comma"></textarea>  
         </details>
       </div>
 
@@ -361,6 +366,13 @@
         darkModeEnabled = false;
       }
 
+    });
+    // Start with feeds input open if no feeds 
+    document.addEventListener('DOMContentLoaded', function () {
+      console.log(document.getElementById("rssInput").value);
+      if(document.getElementById("rssInput").value.length == 0) {
+        document.getElementById('feedDetails').open = true;
+      }
     });
   </script>
 </body>
