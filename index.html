@@ -9,8 +9,29 @@
   <script src="https://cdn.jsdelivr.net/npm/rss-parser/dist/rss-parser.min.js"></script>
   <link rel="icon" type="image/png" href="https://emoji.dutl.uk/png/64x64/📓.png">
   <style>
+    :root {
+      /* Light mode colors */
+      --background-color: white;
+      --text-color: black;
+      --link-color: royalblue;
+      --border-color: #aaa;
+      --metadata-color: #555;
+      --header-separator-color: #c9c9c9;
+    }
+    body.dark-mode {
+      /* Dark mode colors */
+      --background-color: black;
+      --text-color: whitesmoke;
+      --link-color: #3ec6db;
+      --border-color: #555;
+      --metadata-color: #aaa;
+      --header-separator-color: #aaa;
+    }
+    body {
+      background-color: var(--background-color);
+      color: var(--text-color);
+    }
     #app {
-      /* font-family: 'Helvetica', 'Arial', sans-serif; */
       font-family: "Iowan Old Style", Iowan, "Iowan BT", "Palatino Linotype", "URW Palladio L", P052, serif;
       max-width: 800px;
       margin: 0 auto;
@@ -20,7 +41,7 @@
       font-size: 1.5em;
     }
     .header {
-      border-bottom: 1px solid #c9c9c9;
+      border-bottom: 1px solid var(--header-separator-color);
     }
     textarea {
       width: 100%;
@@ -32,7 +53,7 @@
     }
     .description {
       margin-top: 10px;
-      border: 1px solid #aaa;
+      border: 1px solid var(--border-color);
       padding: 10px;
       max-height: 80vh;
       overflow-y: scroll;
@@ -48,13 +69,13 @@
     }
     .meta {
       font-size: 0.9em;
-      color: #555;
+      color: var(--text-color);
     }
     a {
-      color: royalblue;
+      color: var(--link-color);
     }
     blockquote {
-      border-left: 0.2em solid #88888888;
+      border-left: 0.2em solid var(--border-color);
       padding-left: 0.5em;
       margin-left: 1em;
       font-style: italic;
@@ -64,7 +85,7 @@
       text-decoration: unset;
     }
     table, th, td {
-      border: 1px solid #aaa;
+      border: 1px solid var(--border-color);
       border-collapse: collapse;
       padding: 0.5em;
       width: -webkit-fill-available;
@@ -80,7 +101,7 @@
       margin-top: 1em;
       margin-bottom:1em;
       padding: 10px;
-      border: 1px solid #aaa;
+      border: 1px solid var(--border-color);
     }
     #advanced-settings table, #advanced-settings td {
       border: none;
@@ -344,35 +365,42 @@
         this.loadFeedsFromQuery();
       },
     });
+  </script>
+  <script>
+    // Dark mode toggle function
+    function toggleDarkMode() {
+      const body = document.body;
+      const isDarkMode = body.classList.toggle('dark-mode'); // Toggle the class
+      localStorage.setItem('darkModeEnabled', isDarkMode); // Save preference
+    }
 
-    document.getElementById('bookmarkMeButton').addEventListener('click', function(e) {
-      e.preventDefault();
-      const message = `To bookmark this page in your browser:  
-      \n1. Press CTRL + D (Windows/Linux) or Command + D (Mac). 
-      \n2. Choose a folder for saving the bookmark.`;
-      alert(message);
-    });
-    var darkModeEnabled = false;
-    document.getElementById('toggleDarkMode').addEventListener('click', function(e) {
-      e.preventDefault();
-      if (!darkModeEnabled){
-        document.body.style.color = 'whitesmoke';
-        document.body.style.backgroundColor = 'black';  
-        darkModeEnabled = true; 
-      }
-      else {
-        document.body.style.color = 'black';
-        document.body.style.backgroundColor = 'white';
-        darkModeEnabled = false;
+    // Apply saved theme on load
+    document.addEventListener('DOMContentLoaded', function () {
+      const isDarkMode = localStorage.getItem('darkModeEnabled') === 'true';
+      if (isDarkMode) {
+        document.body.classList.add('dark-mode');
       }
 
+      // Attach event listener for the toggle button
+      document.getElementById('toggleDarkMode').addEventListener('click', toggleDarkMode);
     });
+  </script>
+  <script>
     // Start with feeds input open if no feeds 
     document.addEventListener('DOMContentLoaded', function () {
       console.log(document.getElementById("rssInput").value);
       if(document.getElementById("rssInput").value.length == 0) {
         document.getElementById('feedDetails').open = true;
       }
+    });
+  </script>
+  <script>
+    document.getElementById('bookmarkMeButton').addEventListener('click', function(e) {
+      e.preventDefault();
+      const message = `To bookmark this page in your browser:  
+      \n1. Press CTRL + D (Windows/Linux) or Command + D (Mac). 
+      \n2. Choose a folder for saving the bookmark.`;
+      alert(message);
     });
   </script>
 </body>
