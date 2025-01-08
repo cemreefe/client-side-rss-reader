@@ -23,9 +23,9 @@
       <div class="header">
         <h1 style="display:inline-block;width:100%;max-width:49%;" align="left;">Simple RSS Reader</h1>
         <div style="display:inline-block;width:100%;max-width:49%;" align="right">
-          <button @click="fetchFeeds">Fetch</button>
-          <button id="bookmarkMeButton">Bookmark</button>
-          <button @click="toggleAdvancedSettings">⚙</button>
+          <button @click="fetchFeeds"><img class='buttonLogo' src="/static/img/sync.png"></button>
+          <button @click="bookmarkMe"><img class='buttonLogo' src="/static/img/bookmark.png"></button>
+          <button @click="toggleAdvancedSettings"><img class='buttonLogo' src="/static/img/settings.png"></button>
         </div>
         <div id="advanced-settings">
           <b>Advanced Settings</b>
@@ -77,6 +77,7 @@
           </summary>
           <br>
           <textarea id="rssInput" v-model="rssInput"  @input="updateUrlParams" placeholder="Enter RSS feeds separated by a comma"></textarea>  
+          <button @click="fetchFeeds">Fetch</button>
         </details>
       </div>
 

@@ -23,10 +23,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-document.getElementById('bookmarkMeButton').addEventListener('click', function(e) {
-    e.preventDefault();
-    const message = `To bookmark this page in your browser:  
-    \n1. Press CTRL + D (Windows/Linux) or Command + D (Mac). 
-    \n2. Choose a folder for saving the bookmark.`;
+function bookmarkMe() {
+    const message = `
+    Everything needd to reproduce your RSS feed is in the url of this page!
+    Simply bookmark it or share it as a link to use it from anywhere.
+
+    To bookmark this page in your browser: 
+    
+    Press CTRL + D (Windows/Linux) or Command + D (Mac). 
+    `
     alert(message);
-});
+};

@@ -102,3 +102,9 @@ table, th, td {
 #before-buttons {
     min-height: 85vh;
 } 
+.buttonLogo {
+    height: 0.9em;
+}
+.header button {
+    height: 1.8em;
+}
