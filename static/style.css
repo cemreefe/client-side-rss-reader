@@ -1,0 +1,104 @@
+:root {
+    /* Light mode colors */
+    --background-color: white;
+    --text-color: black;
+    --link-color: royalblue;
+    --border-color: #aaa;
+    --metadata-color: #555;
+    --header-separator-color: #c9c9c9;
+}
+body.dark-mode {
+    /* Dark mode colors */
+    --background-color: black;
+    --text-color: whitesmoke;
+    --link-color: #3ec6db;
+    --border-color: #555;
+    --metadata-color: #aaa;
+    --header-separator-color: #aaa;
+}
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+#app {
+    font-family: "Iowan Old Style", Iowan, "Iowan BT", "Palatino Linotype", "URW Palladio L", P052, serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+h1 {
+    font-size: 1.5em;
+}
+.header {
+    border-bottom: 1px solid var(--header-separator-color);
+}
+textarea {
+    width: 100%;
+    height: 100px;
+    margin-bottom: 10px;
+}
+.feed-item {
+    margin-bottom: 20px;
+}
+.description {
+    margin-top: 10px;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    max-height: 80vh;
+    overflow-y: scroll;
+    padding-left: 2em;
+    padding-right: 2em;
+    line-height: 1.6em;
+}
+.description p {
+    line-height: 1.4em;
+}
+.description img, .description video {
+    max-width: 100%;
+    max-height: 60vh;
+}
+.description div:has(img), .description div:has(video) {
+    text-align: center;
+}
+.meta {
+    font-size: 0.9em;
+    color: var(--text-color);
+}
+a {
+    color: var(--link-color);
+}
+blockquote {
+    border-left: 0.2em solid var(--border-color);
+    padding-left: 0.5em;
+    margin-left: 1em;
+    font-style: italic;
+    font-family: auto;
+}
+.post-title {
+    text-decoration: unset;
+}
+table, th, td {
+    border: 1px solid var(--border-color);
+    border-collapse: collapse;
+    padding: 0.5em;
+    width: -webkit-fill-available;
+}
+.pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#advanced-settings {
+    display: none;
+    margin-top: 1em;
+    margin-bottom:1em;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+}
+#advanced-settings table, #advanced-settings td {
+    border: none;
+}
+#before-buttons {
+    min-height: 85vh;
+} 
