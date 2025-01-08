@@ -90,10 +90,12 @@
         <div v-if="item.showDescription" class="description">
           <div v-html="item.content"></div>
           <div v-for="media in item.mediaContent">
+            <p>
             <img v-if="media.$.medium == 'image'" :src="media.$.url" alt="Media Content" />
             <video v-if="media.$.medium == 'video'" controls>
               <source :src="media.$.url" :type="media.$.type">
             </video>
+            </p>
           </div>
           <a :href="item.link" target="_blank">Read on {{ item.feedTitle }}</a>
           <button @click="closeDescription(item)">Close</button>
