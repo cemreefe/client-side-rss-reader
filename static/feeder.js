@@ -27,6 +27,160 @@ function getCache(url, ttl) {
   return parsedData.data;
 }
 
+// function axiosGetWithPartialResponse(url, config = {}) {
+//   const controller = new AbortController();
+
+//   // Ensure we have the abort signal in the config
+//   const axiosConfig = {
+//     ...config,
+//     signal: controller.signal,
+//     onDownloadProgress: (progressEvent) => {
+//       console.log(progressEvent)
+//       const bytesReceived = progressEvent.loaded;
+//       if (bytesReceived >= 100000) {
+//         console.log('Received 100 bytes, aborting request');
+//         controller.abort();  // Abort the request after receiving 100 bytes
+//       }
+//     },
+//   };
+
+//   // Return a promise that handles the request and response
+//   return axios
+//     .get(url, axiosConfig)
+//     .then((response) => {
+//       // If the request is successful (without being aborted)
+//       return response.data;
+//     })
+//     .catch((error) => {
+//       // Handle the case when the request is aborted or any other error
+//       if (axios.isCancel(error)) {
+//         // Request was aborted
+//         console.log('Request aborted');
+//         const partialResponse = error.response ? error.response.data : null;
+//         console.log(error);
+//         console.log(error.response);
+//         console.log(partialResponse);
+//         return partialResponse.data; // Return the partial data
+//       } else {
+//         // Handle other errors
+//         console.error('Error:', error);
+//         throw error;
+//       }
+//     });
+// }
+
+// function axiosGetWithPartialResponse(url, config = {}) {
+//   return new Promise((resolve, reject) => {
+//     const xhr = new XMLHttpRequest();
+//     const controller = new AbortController();
+    
+//     // Set up the request configuration
+//     xhr.open('GET', url, true);
+//     xhr.responseType = 'arraybuffer'; // or 'blob'
+//     xhr.signal = controller.signal;
+    
+//     // Track the download progress
+//     xhr.onprogress = function (event) {
+//       if (event.loaded >= 100) {
+//         console.log('Received 100 bytes, aborting request');
+//         controller.abort();  // Abort the request after receiving 100 bytes
+//       }
+//     };
+    
+//     // Handle successful response
+//     xhr.onload = function () {
+//       if (xhr.status === 200) {
+//         resolve(xhr.response.data);
+//       } else {
+//         reject(new Error('Request failed with status ' + xhr.status));
+//       }
+//     };
+    
+//     // Handle aborted request or any errors
+//     xhr.onerror = function () {
+//       reject(new Error('Request failed'));
+//     };
+    
+//     xhr.onabort = function () {
+//       console.log('Request aborted');
+//       resolve(xhr.response.data);
+//     };
+    
+//     // Send the request
+//     xhr.send();
+//   });
+// }
+
+function axiosGetWithPartialResponse(url) {
+  return new Promise((resolve, reject) => {
+    const controller = new AbortController();
+    const decoder = new TextDecoder("utf-8"); // TextDecoder to decode the stream into a string
+    let accumulatedData = ''; // To store the concatenated string data
+    
+    // Make the request using Fetch API (which supports streams)
+    fetch(url, { signal: controller.signal })
+      .then((response) => {
+        const reader = response.body.getReader(); // Read the stream of data
+
+        let receivedBytes = 0;
+        let partialData = new Uint8Array(100000); // Pre-allocate space for data
+
+        // Read the stream in chunks
+        const readStream = () => {
+          reader.read().then(({ done, value }) => {
+            if (done) {
+              // Stream finished, resolve with the accumulated data
+              resolve({
+                data: accumulatedData, // Return the accumulated XML data as string
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+                config: {},
+                request: {},
+                truncated: false
+              });
+              return;
+            }
+
+            // Convert the chunk to a string and accumulate it
+            accumulatedData += decoder.decode(value, { stream: true });
+
+            receivedBytes += value.length;
+            console.log(`Received ${receivedBytes} bytes`);
+
+            if (receivedBytes >= 100000) {
+              // We've received 100,000 bytes, abort the request
+              controller.abort();
+              resolve({
+                data: accumulatedData, // Return the accumulated XML data
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+                config: {},
+                request: {},
+                truncated: true
+              });
+            } else {
+              // Continue reading if we haven't yet received the desired amount of data
+              readStream();
+            }
+          }).catch(reject);
+        };
+
+        // Start reading the stream
+        readStream();
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') {
+          console.log('Request aborted');
+        }
+        reject(error);
+      });
+  });
+}
+
+
+
 new Vue({
   el: '#app',
   data: {
@@ -96,7 +250,9 @@ new Vue({
             return;
           }
 
-          const response = await axios.get(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+          const response, truncated = await axiosGetWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+          console.log("responseresponseresponseresponse");
+          console.log(response);
           const feed = await parser.parseString(response.data);
           setCache(url, feed);
           console.log("Feed");
