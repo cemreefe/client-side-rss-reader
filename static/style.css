@@ -9,10 +9,10 @@
 }
 body.dark-mode {
     /* Dark mode colors */
-    --background-color: black;
-    --text-color: whitesmoke;
-    --link-color: #3ec6db;
-    --border-color: #555;
+    --background-color: #1E201E;
+    --text-color: #ECDFCC;
+    --link-color: #6c9e70;
+    --border-color: #3C3D37;
     --metadata-color: #aaa;
     --header-separator-color: #aaa;
 }
