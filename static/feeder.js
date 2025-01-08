@@ -29,7 +29,7 @@ function getCache(url, ttl) {
 
 // Starts the request, but only fetches until the size limit is reached, returns the partial or complete data
 // If truncated response is returned, returns true truncated flag.
-function axiosGetWithPartialResponse(url) {
+function axiosGetWithPartialResponse(url, maxResponseSizeKB) {
   return new Promise((resolve, reject) => {
     const controller = new AbortController();
     const decoder = new TextDecoder("utf-8"); // TextDecoder to decode the stream into a string
@@ -41,7 +41,6 @@ function axiosGetWithPartialResponse(url) {
         const reader = response.body.getReader(); // Read the stream of data
 
         let receivedBytes = 0;
-        let partialData = new Uint8Array(100000); // Pre-allocate space for data
 
         // Read the stream in chunks
         const readStream = () => {
@@ -66,8 +65,8 @@ function axiosGetWithPartialResponse(url) {
             receivedBytes += value.length;
             console.log(`Received ${receivedBytes} bytes`);
 
-            if (receivedBytes >= 100000) {
-              // We've received 100,000 bytes, abort the request
+            if (receivedBytes >= maxResponseSizeKB * 1000) {
+              // We've received maxResponseSizeKB*1000 bytes, abort the request
               controller.abort();
               resolve({
                 data: accumulatedData, // Return the accumulated XML data
@@ -155,6 +154,7 @@ new Vue({
     currentPage: 1,
     pageSize: 10,
     cacheTTL: 30, // Default TTL in minutes
+    responseTruncationLimitKB: 300, // Number response size after which feeds stop ingesting
     blocklist: '', // Default blocklist
     advancedSettingsVisible: false,
   },
@@ -214,12 +214,12 @@ new Vue({
             return;
           }
 
-          const response = await axiosGetWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+          const response = await axiosGetWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, this.responseTruncationLimitKB);
 
           const feed_text = response.truncated ? closeTruncatedFeed(response.data) : response.data
           const feed = await parser.parseString(feed_text) ;
           setCache(url, feed);
-          
+
           this.unfilteredFeeds.push(...feed.items.map(item => ({
             title: item.title,
             link: item.link,
@@ -271,6 +271,7 @@ new Vue({
         this.rssInput = feeds.split(',').join(', ');
         this.cacheTTL = Number(urlParams.get('ttl')) || this.cacheTTL;
         this.blocklist = urlParams.get('blocklist') || this.blocklist;
+        this.responseTruncationLimitKB = Number(urlParams.get('truncLim')) || this.responseTruncationLimitKB;
         this.fetchFeeds();
       }
     },
@@ -287,7 +288,12 @@ new Vue({
       document.getElementById('advanced-settings').style.display = this.advancedSettingsVisible ? 'block' : 'none';
     },
     updateUrlParams() {
-      const queryParams = { feeds: this.rssInput.split(',').map(url => url.trim()), ttl: this.cacheTTL, blocklist: this.blocklist };
+      const queryParams = { 
+        feeds: this.rssInput.split(',').map(url => url.trim()), 
+        ttl: this.cacheTTL, 
+        blocklist: this.blocklist, 
+        truncLim: this.responseTruncationLimitKB
+      };
       const queryString = new URLSearchParams(queryParams).toString();
       history.replaceState(null, null, `?${queryString}`);
     },

@@ -48,6 +48,14 @@
               </td>
             </tr>
             <tr>
+              <td>
+                <label for="responseTruncationLimitKB">Feed response truncation limit (in KB):</label>
+              </td>
+              <td>
+                <input type="text" id="responseTruncationLimitKB" v-model="responseTruncationLimitKB" @input="updateUrlParams">
+              </td>
+            </tr>
+            <tr>
               <td colspan="2">
                 <button @click="invalidateCache">Invalidate Cache</button>
               </td>
