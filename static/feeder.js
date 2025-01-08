@@ -27,90 +27,8 @@ function getCache(url, ttl) {
   return parsedData.data;
 }
 
-// function axiosGetWithPartialResponse(url, config = {}) {
-//   const controller = new AbortController();
-
-//   // Ensure we have the abort signal in the config
-//   const axiosConfig = {
-//     ...config,
-//     signal: controller.signal,
-//     onDownloadProgress: (progressEvent) => {
-//       console.log(progressEvent)
-//       const bytesReceived = progressEvent.loaded;
-//       if (bytesReceived >= 100000) {
-//         console.log('Received 100 bytes, aborting request');
-//         controller.abort();  // Abort the request after receiving 100 bytes
-//       }
-//     },
-//   };
-
-//   // Return a promise that handles the request and response
-//   return axios
-//     .get(url, axiosConfig)
-//     .then((response) => {
-//       // If the request is successful (without being aborted)
-//       return response.data;
-//     })
-//     .catch((error) => {
-//       // Handle the case when the request is aborted or any other error
-//       if (axios.isCancel(error)) {
-//         // Request was aborted
-//         console.log('Request aborted');
-//         const partialResponse = error.response ? error.response.data : null;
-//         console.log(error);
-//         console.log(error.response);
-//         console.log(partialResponse);
-//         return partialResponse.data; // Return the partial data
-//       } else {
-//         // Handle other errors
-//         console.error('Error:', error);
-//         throw error;
-//       }
-//     });
-// }
-
-// function axiosGetWithPartialResponse(url, config = {}) {
-//   return new Promise((resolve, reject) => {
-//     const xhr = new XMLHttpRequest();
-//     const controller = new AbortController();
-    
-//     // Set up the request configuration
-//     xhr.open('GET', url, true);
-//     xhr.responseType = 'arraybuffer'; // or 'blob'
-//     xhr.signal = controller.signal;
-    
-//     // Track the download progress
-//     xhr.onprogress = function (event) {
-//       if (event.loaded >= 100) {
-//         console.log('Received 100 bytes, aborting request');
-//         controller.abort();  // Abort the request after receiving 100 bytes
-//       }
-//     };
-    
-//     // Handle successful response
-//     xhr.onload = function () {
-//       if (xhr.status === 200) {
-//         resolve(xhr.response.data);
-//       } else {
-//         reject(new Error('Request failed with status ' + xhr.status));
-//       }
-//     };
-    
-//     // Handle aborted request or any errors
-//     xhr.onerror = function () {
-//       reject(new Error('Request failed'));
-//     };
-    
-//     xhr.onabort = function () {
-//       console.log('Request aborted');
-//       resolve(xhr.response.data);
-//     };
-    
-//     // Send the request
-//     xhr.send();
-//   });
-// }
-
+// Starts the request, but only fetches until the size limit is reached, returns the partial or complete data
+// If truncated response is returned, returns true truncated flag.
 function axiosGetWithPartialResponse(url) {
   return new Promise((resolve, reject) => {
     const controller = new AbortController();
@@ -179,6 +97,7 @@ function axiosGetWithPartialResponse(url) {
   });
 }
 
+// Takes an incomplete rss or xml feed, removes broken tagsat the end and closes open tags.
 function closeTruncatedFeed(feedData) {
   const tagRegex = /<\/?([^>]+)([^>]*)\/?>/g;
   
@@ -225,8 +144,6 @@ function closeTruncatedFeed(feedData) {
   // Step 4: Return the updated feed data
   return result;
 }
-
-
 
 new Vue({
   el: '#app',
@@ -298,18 +215,11 @@ new Vue({
           }
 
           const response = await axiosGetWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-          console.log("responseresponseresponseresponse");
-          console.log(response);
-          if (response.truncated){
-            console.log("closed");
-            console.log(closeTruncatedFeed(response.data))
-          }
+
           const feed_text = response.truncated ? closeTruncatedFeed(response.data) : response.data
           const feed = await parser.parseString(feed_text) ;
           setCache(url, feed);
-          console.log("Feed");
-          console.log(feed)
-
+          
           this.unfilteredFeeds.push(...feed.items.map(item => ({
             title: item.title,
             link: item.link,
