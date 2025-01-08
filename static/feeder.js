@@ -98,51 +98,60 @@ function axiosGetWithPartialResponse(url, maxResponseSizeKB) {
 
 // Takes an incomplete rss or xml feed, removes broken tagsat the end and closes open tags.
 function closeTruncatedFeed(feedData) {
-  const tagRegex = /<\/?([^>]+)([^>]*)\/?>/g;
-  
+  const tagRegex = /<\/?([^>]+?)(\/?>|( [^>]*)\/?>)/g;
+  const cdataRegex = /<!\[CDATA\[.*?\]\]>/gs; // Matches CDATA sections
+
+  // Step 1: Remove everything after the last </item>
+  const lastItemIndex = feedData.lastIndexOf('</item>');
+  const lastEntryIndex = feedData.lastIndexOf('</entry>');
+  if (lastItemIndex !== -1) {
+    feedData = feedData.substring(0, lastItemIndex + 7); // Keep up to the closing </item>
+  } 
+  else if (lastEntryIndex !== -1){
+    // For Atom feeds, look for </entry>
+    if (lastEntryIndex !== -1) {
+      feedData = feedData.substring(0, lastEntryIndex + 8); // Keep up to the closing </entry>
+    }
+  }
+  else {
+    console.log("No complete items in current truncation level.");
+    return;
+  }
+
+  // Remove CDATA tags for tag closing analysis. We'll close the tags on the original later on.
+  let cdataLessFeed = feedData.replace(cdataRegex, '');
+
   // Stack to keep track of opened tags
   const openTags = [];
-  let result = feedData;
   let match;
 
-  // Step 1: Remove broken tags at the end
-  const trailingBrokenTagRegex = /<([([^>]*)(?=[^>]*>)[^<]*$/g;
-  result = result.replace(trailingBrokenTagRegex, '');  // Remove broken tag from the end
+  // Step 3: Process the remaining tags to track opened and closed ones
+  while ((match = tagRegex.exec(cdataLessFeed)) !== null) {
 
-  // Step 2: Process the remaining tags to track opened and closed ones
-  let lastIndex = 0;
-  while ((match = tagRegex.exec(result)) !== null) {
     const tagName = match[1];
-    const isClosingTag = result[match.index + 1] === '/';
-    const isSelfClosingTag = result[match.index + match[0].length - 2] === '/';
+    const isClosingTag = cdataLessFeed[match.index + 1] === '/';
+    const isSelfClosingTag = cdataLessFeed[match.index + match[0].length - 2] === '/';
 
     if (isClosingTag) {
       // If it's a closing tag, check if it matches the last opened tag
       if (openTags.length > 0 && openTags[openTags.length - 1] === tagName) {
         openTags.pop(); // Correctly close the last opened tag
-      } else {
-        // If no matching opening tag exists, we ignore the closing tag
-        continue;
       }
-    } else if (isSelfClosingTag) {
-      // If it's a self-closing tag, just append it without tracking it in the stack
-    } else {
+    } else if (!isSelfClosingTag) {
       // If it's an opening tag, push it to the stack
       openTags.push(tagName);
     }
-
-    // Update the lastIndex to track content after the current tag
-    lastIndex = match.index + match[0].length;
   }
 
-  // Step 3: Add closing tags for any remaining open tags
-  openTags.reverse().forEach(tag => {
-    result += `</${tag}>`; // Add the missing closing tag at the end of the feed
+  // Step 4: Add closing tags for any remaining open tags
+  openTags.reverse().forEach((tag) => {
+    feedData += `</${tag}>`; // Add the missing closing tag at the end of the feed
   });
 
-  // Step 4: Return the updated feed data
-  return result;
+  // Step 5: Return the updated feed data
+  return feedData;
 }
+
 
 new Vue({
   el: '#app',
@@ -216,7 +225,9 @@ new Vue({
 
           const response = await axiosGetWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, this.responseTruncationLimitKB);
 
-          const feed_text = response.truncated ? closeTruncatedFeed(response.data) : response.data
+          const feed_text = response.truncated ? closeTruncatedFeed(response.data) : response.data;
+          if (!feed_text) return;
+          console.log(feed_text)
           const feed = await parser.parseString(feed_text) ;
           setCache(url, feed);
 
