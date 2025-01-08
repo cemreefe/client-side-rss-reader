@@ -227,7 +227,6 @@ new Vue({
 
           const feed_text = response.truncated ? closeTruncatedFeed(response.data) : response.data;
           if (!feed_text) return;
-          console.log(feed_text)
           const feed = await parser.parseString(feed_text) ;
           setCache(url, feed);
 
