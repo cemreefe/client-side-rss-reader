@@ -27,6 +27,38 @@
           <button id="bookmarkMeButton">Bookmark Me</button>
           <button @click="toggleAdvancedSettings">Advanced Settings</button>
         </div>
+        <div id="advanced-settings">
+          <b>Advanced Settings</b>
+          <br>
+          <table>
+            <tr>
+              <td>
+                <label for="cache-ttl">Cache TTL (minutes):</label>
+              </td>
+              <td>
+                <input type="number" id="cache-ttl" v-model.number="cacheTTL" @input="updateUrlParams">
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label for="blocklist">Blocklist (comma-separated):</label>
+              </td>
+              <td>
+                <input type="text" id="blocklist" v-model="blocklist" @input="updateUrlParams">
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2">
+                <button @click="invalidateCache">Invalidate Cache</button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <button id="toggleDarkMode">Toggle Dark Mode</button>
+              </td>
+            </tr>
+          </table>
+        </div>
       </div>
 
       <small>a <a href="https://www.dutl.uk/">dutl.uk</a> app. see my source code <a href="https://github.com/cemreefe/client-side-rss-reader">here</a></small><br><br>
@@ -39,40 +71,6 @@
           <textarea id="rssInput" v-model="rssInput"  @input="updateUrlParams" placeholder="Enter RSS feeds separated by a comma"></textarea>  
         </details>
       </div>
-
-      <div id="advanced-settings">
-        <b>Advanced Settings</b>
-        <br>
-        <table>
-          <tr>
-            <td>
-              <label for="cache-ttl">Cache TTL (minutes):</label>
-            </td>
-            <td>
-              <input type="number" id="cache-ttl" v-model.number="cacheTTL" @input="updateUrlParams">
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <label for="blocklist">Blocklist (comma-separated):</label>
-            </td>
-            <td>
-              <input type="text" id="blocklist" v-model="blocklist" @input="updateUrlParams">
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <button @click="invalidateCache">Invalidate Cache</button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <button id="toggleDarkMode">Toggle Dark Mode</button>
-            </td>
-          </tr>
-        </table>
-      </div>
-      
 
       <div v-if="loading" style="margin-top:1em;">Loading...</div>
       <div v-if="error" style="margin-top:1em;">{{ error }}</div>
