@@ -6,6 +6,8 @@
     --border-color: #aaa;
     --metadata-color: #555;
     --header-separator-color: #c9c9c9;
+    --button-color: buttonface;
+    --input-background: white;
 }
 body.dark-mode {
     /* Dark mode colors */
@@ -15,6 +17,8 @@ body.dark-mode {
     --border-color: #3C3D37;
     --metadata-color: #aaa;
     --header-separator-color: #aaa;
+    --button-color: gray;
+    --input-background: darkgray;
 }
 body {
     background-color: var(--background-color);
