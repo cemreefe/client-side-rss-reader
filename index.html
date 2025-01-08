@@ -64,7 +64,7 @@
     .description p {
       line-height: 1.4em;
     }
-    .description img {
+    .description img, .description video {
       max-width: 100%;
     }
     .meta {
@@ -184,6 +184,13 @@
         <a href="#" @click.prevent="showDescription(item)" class="post-title">{{ !!item.title ? item.title : "Post" }}</a>
         <div v-if="item.showDescription" class="description">
           <div v-html="item.content"></div>
+          <div v-for="media in item.mediaContent">
+            <img v-if="media.$.medium == 'image'" :src="media.$.url" alt="Media Content" />
+            <video v-if="media.$.medium == 'video'" controls>
+              <source :src="media.$.url" :type="media.$.type">
+            </video>
+            <video  ></video>
+          </div>
           <a :href="item.link" target="_blank">Read on {{ item.feedTitle }}</a>
           <button @click="closeDescription(item)">Close</button>
         </div>
@@ -267,7 +274,13 @@
           this.error = null;
           this.feeds = [];
           this.unfilteredFeeds = []; // Clear unfiltered results
-          const parser = new RSSParser();
+          const parser = new RSSParser({
+            customFields: {
+              item: [
+                ['media:content', 'mediaContent', {keepArray: true}],
+              ]
+            }
+          });
           const urls = this.rssInput.split(',').map(url => url.trim());
 
           const fetchFeed = async (url) => {
@@ -282,7 +295,9 @@
                   content: item.content,
                   feedTitle: cachedFeed.title,
                   showDescription: false,
+                  mediaContent: item.mediaContent,
                 })));
+                console.log(this.unfilteredFeeds)
                 this.updateFilteredFeeds(); // Update the filtered feeds whenever new data is added
                 return;
               }
@@ -290,6 +305,8 @@
               const response = await axios.get(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
               const feed = await parser.parseString(response.data);
               setCache(url, feed);
+              console.log("Feed");
+              console.log(feed)
 
               this.unfilteredFeeds.push(...feed.items.map(item => ({
                 title: item.title,
@@ -298,7 +315,9 @@
                 content: item.content,
                 feedTitle: feed.title,
                 showDescription: false,
+                mediaContent: item.mediaContent,
               })));
+              console.log(this.unfilteredFeeds)
               this.updateFilteredFeeds(); // Update the filtered feeds as we go
             } catch (err) {
               console.error(`Failed to fetch feed from ${url}:`, err);
