@@ -57,7 +57,7 @@ textarea {
     max-width: 100%;
     max-height: 60vh;
 }
-.description div:has(img), .description div:has(video) {
+.description p:has(img), .description p:has(video) {
     text-align: center;
 }
 .meta {
