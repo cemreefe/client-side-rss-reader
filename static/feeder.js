@@ -179,6 +179,53 @@ function axiosGetWithPartialResponse(url) {
   });
 }
 
+function closeTruncatedFeed(feedData) {
+  const tagRegex = /<\/?([^>]+)([^>]*)\/?>/g;
+  
+  // Stack to keep track of opened tags
+  const openTags = [];
+  let result = feedData;
+  let match;
+
+  // Step 1: Remove broken tags at the end
+  const trailingBrokenTagRegex = /<([([^>]*)(?=[^>]*>)[^<]*$/g;
+  result = result.replace(trailingBrokenTagRegex, '');  // Remove broken tag from the end
+
+  // Step 2: Process the remaining tags to track opened and closed ones
+  let lastIndex = 0;
+  while ((match = tagRegex.exec(result)) !== null) {
+    const tagName = match[1];
+    const isClosingTag = result[match.index + 1] === '/';
+    const isSelfClosingTag = result[match.index + match[0].length - 2] === '/';
+
+    if (isClosingTag) {
+      // If it's a closing tag, check if it matches the last opened tag
+      if (openTags.length > 0 && openTags[openTags.length - 1] === tagName) {
+        openTags.pop(); // Correctly close the last opened tag
+      } else {
+        // If no matching opening tag exists, we ignore the closing tag
+        continue;
+      }
+    } else if (isSelfClosingTag) {
+      // If it's a self-closing tag, just append it without tracking it in the stack
+    } else {
+      // If it's an opening tag, push it to the stack
+      openTags.push(tagName);
+    }
+
+    // Update the lastIndex to track content after the current tag
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Step 3: Add closing tags for any remaining open tags
+  openTags.reverse().forEach(tag => {
+    result += `</${tag}>`; // Add the missing closing tag at the end of the feed
+  });
+
+  // Step 4: Return the updated feed data
+  return result;
+}
+
 
 
 new Vue({
@@ -250,10 +297,15 @@ new Vue({
             return;
           }
 
-          const response, truncated = await axiosGetWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+          const response = await axiosGetWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
           console.log("responseresponseresponseresponse");
           console.log(response);
-          const feed = await parser.parseString(response.data);
+          if (response.truncated){
+            console.log("closed");
+            console.log(closeTruncatedFeed(response.data))
+          }
+          const feed_text = response.truncated ? closeTruncatedFeed(response.data) : response.data
+          const feed = await parser.parseString(feed_text) ;
           setCache(url, feed);
           console.log("Feed");
           console.log(feed)
