@@ -181,7 +181,7 @@
 
       <div v-for="(item, index) in paginatedFeeds" :key="index" class="feed-item">
         <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
-        <a href="#" @click.prevent="showDescription(item)" class="post-title">{{ item.title }}</a>
+        <a href="#" @click.prevent="showDescription(item)" class="post-title">{{ !!item.title ? item.title : "Post" }}</a>
         <div v-if="item.showDescription" class="description">
           <div v-html="item.content"></div>
           <a :href="item.link" target="_blank">Read on {{ item.feedTitle }}</a>
