@@ -27,6 +27,124 @@ function getCache(url, ttl) {
   return parsedData.data;
 }
 
+// Starts the request, but only fetches until the size limit is reached, returns the partial or complete data
+// If truncated response is returned, returns true truncated flag.
+function axiosGetWithPartialResponse(url) {
+  return new Promise((resolve, reject) => {
+    const controller = new AbortController();
+    const decoder = new TextDecoder("utf-8"); // TextDecoder to decode the stream into a string
+    let accumulatedData = ''; // To store the concatenated string data
+    
+    // Make the request using Fetch API (which supports streams)
+    fetch(url, { signal: controller.signal })
+      .then((response) => {
+        const reader = response.body.getReader(); // Read the stream of data
+
+        let receivedBytes = 0;
+        let partialData = new Uint8Array(100000); // Pre-allocate space for data
+
+        // Read the stream in chunks
+        const readStream = () => {
+          reader.read().then(({ done, value }) => {
+            if (done) {
+              // Stream finished, resolve with the accumulated data
+              resolve({
+                data: accumulatedData, // Return the accumulated XML data as string
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+                config: {},
+                request: {},
+                truncated: false
+              });
+              return;
+            }
+
+            // Convert the chunk to a string and accumulate it
+            accumulatedData += decoder.decode(value, { stream: true });
+
+            receivedBytes += value.length;
+            console.log(`Received ${receivedBytes} bytes`);
+
+            if (receivedBytes >= 100000) {
+              // We've received 100,000 bytes, abort the request
+              controller.abort();
+              resolve({
+                data: accumulatedData, // Return the accumulated XML data
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+                config: {},
+                request: {},
+                truncated: true
+              });
+            } else {
+              // Continue reading if we haven't yet received the desired amount of data
+              readStream();
+            }
+          }).catch(reject);
+        };
+
+        // Start reading the stream
+        readStream();
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') {
+          console.log('Request aborted');
+        }
+        reject(error);
+      });
+  });
+}
+
+// Takes an incomplete rss or xml feed, removes broken tagsat the end and closes open tags.
+function closeTruncatedFeed(feedData) {
+  const tagRegex = /<\/?([^>]+)([^>]*)\/?>/g;
+  
+  // Stack to keep track of opened tags
+  const openTags = [];
+  let result = feedData;
+  let match;
+
+  // Step 1: Remove broken tags at the end
+  const trailingBrokenTagRegex = /<([([^>]*)(?=[^>]*>)[^<]*$/g;
+  result = result.replace(trailingBrokenTagRegex, '');  // Remove broken tag from the end
+
+  // Step 2: Process the remaining tags to track opened and closed ones
+  let lastIndex = 0;
+  while ((match = tagRegex.exec(result)) !== null) {
+    const tagName = match[1];
+    const isClosingTag = result[match.index + 1] === '/';
+    const isSelfClosingTag = result[match.index + match[0].length - 2] === '/';
+
+    if (isClosingTag) {
+      // If it's a closing tag, check if it matches the last opened tag
+      if (openTags.length > 0 && openTags[openTags.length - 1] === tagName) {
+        openTags.pop(); // Correctly close the last opened tag
+      } else {
+        // If no matching opening tag exists, we ignore the closing tag
+        continue;
+      }
+    } else if (isSelfClosingTag) {
+      // If it's a self-closing tag, just append it without tracking it in the stack
+    } else {
+      // If it's an opening tag, push it to the stack
+      openTags.push(tagName);
+    }
+
+    // Update the lastIndex to track content after the current tag
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Step 3: Add closing tags for any remaining open tags
+  openTags.reverse().forEach(tag => {
+    result += `</${tag}>`; // Add the missing closing tag at the end of the feed
+  });
+
+  // Step 4: Return the updated feed data
+  return result;
+}
+
 new Vue({
   el: '#app',
   data: {
@@ -96,12 +214,12 @@ new Vue({
             return;
           }
 
-          const response = await axios.get(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-          const feed = await parser.parseString(response.data);
-          setCache(url, feed);
-          console.log("Feed");
-          console.log(feed)
+          const response = await axiosGetWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
 
+          const feed_text = response.truncated ? closeTruncatedFeed(response.data) : response.data
+          const feed = await parser.parseString(feed_text) ;
+          setCache(url, feed);
+          
           this.unfilteredFeeds.push(...feed.items.map(item => ({
             title: item.title,
             link: item.link,
