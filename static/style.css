@@ -60,6 +60,9 @@ textarea {
 .description img, .description video {
     max-width: 100%;
     max-height: 60vh;
+    margin: 0 auto;
+    display: block;
+    float: none;
 }
 .description p:has(img), .description p:has(video) {
     text-align: center;
