@@ -118,3 +118,7 @@ table, th, td {
 figure {
     text-align: center;
 }
+/* For substack's subscribe form! */
+.subscription-widget-wrap-editor {
+    display: none;
+}
