@@ -63,6 +63,8 @@ textarea {
     margin: 0 auto;
     display: block;
     float: none;
+    height: unset;
+    width: unset;
 }
 .description p:has(img), .description p:has(video) {
     text-align: center;
