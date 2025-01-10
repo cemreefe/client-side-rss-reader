@@ -25,13 +25,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function bookmarkMe() {
     const message = `
-    Everything needd to reproduce your RSS feed is in the url of this page!
-    Simply bookmark it or share it as a link to use it from anywhere.
+The URL of this page contains all your feeds!
+Simply bookmark it or share it as a link to use it from anywhere.
 
-    To bookmark this page in your browser: 
-    
-    Press CTRL + D (Windows/Linux) or Command + D (Mac). 
-    `
+To bookmark this page in your browser Simpy press CTRL + D !
+(or Command + D for MacOS)`
     alert(message);
 };
 
