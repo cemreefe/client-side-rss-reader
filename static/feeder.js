@@ -161,7 +161,7 @@ new Vue({
     error: null,
     currentPage: 1,
     pageSize: 10,
-    cacheTTL: 30, // Default TTL in minutes
+    cacheTTL: 0, // Default TTL in minutes
     responseTruncationLimitKB: 100, // Number response size after which feeds stop ingesting
     blocklist: '', // Default blocklist
     advancedSettingsVisible: false,
