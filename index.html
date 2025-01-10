@@ -23,9 +23,10 @@
       <div class="header">
         <h1 style="display:inline-block;width:100%;max-width:49%;" align="left;">Simple RSS Reader</h1>
         <div style="display:inline-block;width:100%;max-width:49%;" align="right">
-          <button @click="fetchFeeds" title="sync"><img class='buttonLogo' src="/static/img/sync.png"></button>
+          <button @click="fetchFeeds" id="fetchFeedsButton" title="sync"><img class='buttonLogo' src="/static/img/sync.png"></button>
           <button @click="bookmarkMe" title="bookmark"><img class='buttonLogo' src="/static/img/bookmark.png"></button>
           <button @click="toggleAdvancedSettings" title="toggleAdvancedSettings"><img class='buttonLogo' src="/static/img/settings.png"></button>
+          <button @click="expandAllToggle" title="Expand All">E</button>
         </div>
         <div id="advanced-settings">
           <b>Advanced Settings</b>
@@ -76,8 +77,11 @@
             Feeds
           </summary>
           <br>
-          <textarea id="rssInput" v-model="rssInput"  @input="updateUrlParams" placeholder="Enter RSS feeds separated by a comma"></textarea>  
+          <textarea id="rssInput" v-model="rssInput" placeholder="Enter RSS feeds separated by a comma"></textarea>  
           <button @click="fetchFeeds">Fetch</button>
+          <button @click="generateOpml">Export OPML</button>
+          <input type="button" id="loadFileXml" value="Import OPML"onclick="document.getElementById('fileSelector').click();">
+          <input id="fileSelector" type="file" @change="handleFileUpload" accept=".opml,.xml" hidden>
         </details>
       </div>
 
@@ -92,8 +96,8 @@
           <div v-html="item.content"></div>
           <div v-for="media in item.mediaContent">
             <p>
-            <img v-if="media.$.medium == 'image'" :src="media.$.url" alt="Media Content" />
-            <video v-if="media.$.medium == 'video'" controls>
+            <img v-if="!!media.$ && media.$.medium == 'image'" :src="media.$.url" alt="Media Content" />
+            <video v-if="!!media.$ && media.$.medium == 'video'" controls>
               <source :src="media.$.url" :type="media.$.type">
             </video>
             </p>

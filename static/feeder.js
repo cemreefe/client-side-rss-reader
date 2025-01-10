@@ -29,7 +29,7 @@ function getCache(url, ttl) {
 
 // Starts the request, but only fetches until the size limit is reached, returns the partial or complete data
 // If truncated response is returned, returns true truncated flag.
-function axiosGetWithPartialResponse(url, maxResponseSizeKB) {
+function fetchWithPartialResponse(url, maxResponseSizeKB) {
   return new Promise((resolve, reject) => {
     const controller = new AbortController();
     const decoder = new TextDecoder("utf-8"); // TextDecoder to decode the stream into a string
@@ -166,6 +166,7 @@ new Vue({
     responseTruncationLimitKB: 100, // Number response size after which feeds stop ingesting
     blocklist: '', // Default blocklist
     advancedSettingsVisible: false,
+    expandAll: false,
   },
   computed: {
     paginatedFeeds() {
@@ -183,10 +184,19 @@ new Vue({
       });
     },
     sortedFeeds() {
-      return this.feeds.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+      return this.feeds.sort((a, b) => {
+        bDate = !!b.pubDate ? new Date(b.pubDate) : new Date(0);
+        aDate = !!a.pubDate ? new Date(a.pubDate) : new Date(0);
+        return bDate - aDate;
+      });
     },
     totalPages() {
       return Math.ceil(this.filteredFeeds.length / this.pageSize);
+    },
+  },
+  watch: {
+    rssInput(newVal) {
+      this.updateUrlParams(); // Perform actions when rssInput changes
     },
   },
   methods: {
@@ -205,6 +215,9 @@ new Vue({
       const urls = this.rssInput.split(',').map(url => url.trim());
 
       const fetchFeed = async (url) => {
+
+        url = url.trim()
+        if (!url) return;
         try {
           const cachedFeed = getCache(url, this.cacheTTL);
           if (cachedFeed) {
@@ -218,12 +231,12 @@ new Vue({
               showDescription: false,
               mediaContent: item.mediaContent,
             })));
-            console.log(this.unfilteredFeeds)
+            console.log("Fetched feed items: " + this.unfilteredFeeds.length)
             this.updateFilteredFeeds(); // Update the filtered feeds whenever new data is added
             return;
           }
 
-          const response = await axiosGetWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, this.responseTruncationLimitKB);
+          const response = await fetchWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, this.responseTruncationLimitKB);
 
           const feed_text = response.truncated ? closeTruncatedFeed(response.data) : response.data;
           if (!feed_text) return;
@@ -239,7 +252,7 @@ new Vue({
             showDescription: false,
             mediaContent: item.mediaContent,
           })));
-          console.log(this.unfilteredFeeds)
+          console.log("Fetched feed items: " + this.unfilteredFeeds.length)
           this.updateFilteredFeeds(); // Update the filtered feeds as we go
         } catch (err) {
           console.error(`Failed to fetch feed from ${url}:`, err);
@@ -269,6 +282,13 @@ new Vue({
     },
     closeDescription(item) {
       item.showDescription = false;
+    },
+    expandAllToggle() {
+      this.expandAll = !this.expandAll;
+      this.feeds = this.feeds.map(feedItem => ({
+        ...feedItem,
+        showDescription: this.expandAll,
+      }));
     },
     formatDate(dateString) {
       const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -307,6 +327,45 @@ new Vue({
       const queryString = new URLSearchParams(queryParams).toString();
       history.replaceState(null, null, `?${queryString}`);
     },
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        alert("Please select a file.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        let opmlContent = e.target.result;
+        // Preprocessing hacks for improper OPML files
+        opmlContent = opmlContent.replaceAll(" & ", " &amp; ")
+        try {
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(opmlContent, "application/xml");
+
+          const parseError = xmlDoc.querySelector("parsererror");
+          if (parseError) {
+            console.log(parseError);
+            throw new Error("Error parsing OPML file.");
+          }
+
+          const outlines = xmlDoc.querySelectorAll("outline");
+          const xmlUrls = Array.from(outlines)
+            .map(outline => outline.getAttribute("xmlUrl"))
+            .filter(url => url !== null);
+
+          this.rssInput = xmlUrls.join(", ");
+          this.fetchFeeds()
+        } catch (error) {
+          alert("Failed to parse OPML file: " + error.message);
+          console.log(error);
+        }
+      };
+      reader.onerror = () => {
+        alert("Error reading file.");
+      }
+      reader.readAsText(file)
+    }
   },
   mounted() {
     this.loadFeedsFromQuery();

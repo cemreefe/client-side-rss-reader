@@ -34,3 +34,42 @@ function bookmarkMe() {
     `
     alert(message);
 };
+
+// Taken from https://rssgizmos.com/opmlmaker.html, with minor edits
+function generateOpml() {
+    let urlTextarea = document.getElementById('rssInput');
+    let urls = urlTextarea.value.split(',');
+    let opmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+        <opml version="2.0">
+            <head>
+                <title>OPML Feeds</title>
+            </head>
+            <body>`;
+    
+    urls.forEach(url => {
+        url = url.trim();
+        if (url !== '') { // Ignore empty lines
+            opmlContent += `
+                <outline text="${url}" title="${url}" type="rss" xmlUrl="${url}" htmlUrl="${url}" />`;
+        }
+    });
+    
+    opmlContent += `
+            </body>
+        </opml>`;
+    
+    // Create a Blob with the OPML content
+    let opmlBlob = new Blob([opmlContent], {type: "text/xml"});
+    
+    // Create a download link
+    let downloadLink = document.createElement("a");
+    downloadLink.href = URL.createObjectURL(opmlBlob);
+    downloadLink.download = "feeds.opml";
+    
+    // Add the link to the document and click it
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    
+    // Remove the link after triggering the download
+    document.body.removeChild(downloadLink);
+}
