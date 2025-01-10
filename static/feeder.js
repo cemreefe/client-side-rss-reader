@@ -152,7 +152,6 @@ function closeTruncatedFeed(feedData) {
   return feedData;
 }
 
-
 new Vue({
   el: '#app',
   data: {
@@ -209,6 +208,7 @@ new Vue({
         customFields: {
           item: [
             ['media:content', 'mediaContent', {keepArray: true}],
+            ['content:encoded', 'contentEncoded'],
           ]
         }
       });
@@ -227,10 +227,12 @@ new Vue({
               link: item.link,
               pubDate: item.pubDate,
               content: item.content,
+              contentEncoded: item.contentEncoded,
               feedTitle: cachedFeed.title,
               showDescription: false,
               mediaContent: item.mediaContent,
             })));
+            console.log(this.unfilteredFeeds)
             console.log("Fetched feed items: " + this.unfilteredFeeds.length)
             this.updateFilteredFeeds(); // Update the filtered feeds whenever new data is added
             return;
@@ -262,17 +264,16 @@ new Vue({
             return;
           }
 
-          // const response = await fetchWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, this.responseTruncationLimitKB);
           const feed_text = response.truncated ? closeTruncatedFeed(response.data) : response.data;
           if (!feed_text) return;
           const feed = await parser.parseString(feed_text) ;
           setCache(url, feed);
-
           this.unfilteredFeeds.push(...feed.items.map(item => ({
             title: item.title,
             link: item.link,
             pubDate: item.pubDate,
             content: item.content,
+            contentEncoded: item.contentEncoded,
             feedTitle: feed.title,
             showDescription: false,
             mediaContent: item.mediaContent,

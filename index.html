@@ -93,7 +93,8 @@
         <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
         <a href="#" @click.prevent="showDescription(item)" class="post-title">{{ !!item.title ? item.title : "Post" }}</a>
         <div v-if="item.showDescription" class="description">
-          <div v-html="item.content"></div>
+          <div v-if="!item.contentEncoded" v-html="item.content"></div>
+          <div v-html="item.contentEncoded"></div>
           <div v-for="media in item.mediaContent">
             <p>
             <img v-if="!!media.$ && media.$.medium == 'image'" :src="media.$.url" alt="Media Content" />
