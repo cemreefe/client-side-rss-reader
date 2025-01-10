@@ -204,6 +204,7 @@ new Vue({
       this.error = null;
       this.feeds = [];
       this.unfilteredFeeds = []; // Clear unfiltered results
+      this.currentPage = 1;
       const parser = new RSSParser({
         customFields: {
           item: [
