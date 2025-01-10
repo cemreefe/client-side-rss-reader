@@ -158,6 +158,7 @@ new Vue({
     rssInput: '',
     feeds: [],
     loading: false,
+    loadingUrls: new Set(),
     error: null,
     currentPage: 1,
     pageSize: 10,
@@ -201,6 +202,7 @@ new Vue({
   methods: {
     async fetchFeeds() {
       this.loading = true;
+      this.loadingUrls = new Set();
       this.error = null;
       this.feeds = [];
       this.unfilteredFeeds = []; // Clear unfiltered results
@@ -232,6 +234,7 @@ new Vue({
               feedTitle: cachedFeed.title,
               showDescription: false,
               mediaContent: item.mediaContent,
+              mediaGroup: item.mediaGroup,
             })));
             console.log(this.unfilteredFeeds)
             console.log("Fetched feed items: " + this.unfilteredFeeds.length)
@@ -239,6 +242,7 @@ new Vue({
             return;
           }
 
+          this.loadingUrls.add(url)
           // Go over all proxies until a usable response is received.
           const proxies = [
             "https://api.allorigins.win/raw?url=",
@@ -259,6 +263,7 @@ new Vue({
             }
             catch {}; // No-op, continue.
           } 
+          this.loadingUrls.delete(url)
           
           if (!response || response.status != 200) {
             // Don't try to parse an error message from the req response.
@@ -278,7 +283,9 @@ new Vue({
             feedTitle: feed.title,
             showDescription: false,
             mediaContent: item.mediaContent,
+            mediaGroup: item.mediaGroup,
           })));
+          console.log(this.unfilteredFeeds)
           console.log("Fetched feed items: " + this.unfilteredFeeds.length)
           this.updateFilteredFeeds(); // Update the filtered feeds as we go
         } catch (err) {

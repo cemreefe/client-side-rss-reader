@@ -81,7 +81,13 @@
         </details>
       </div>
 
-      <div v-if="loading" style="margin-top:1em;">Loading...</div>
+      <div 
+        v-if="loading" 
+        style="margin-top:1em;"
+        :title="'Feeds still loading:\n\n' + Array.from(loadingUrls).join('\n')"
+       >
+       Loading...
+      </div>
       <div v-if="error" style="margin-top:1em;">{{ error }}</div>
       <br>
 
@@ -93,6 +99,7 @@
           <div v-html="item.contentEncoded"></div>
           <div v-for="media in item.mediaContent">
             <p>
+            {{ item.mediaGroup }}
             <img v-if="!!media.$ && media.$.medium == 'image'" :src="media.$.url" alt="Media Content" />
             <video v-if="!!media.$ && media.$.medium == 'video'" controls>
               <source :src="media.$.url" :type="media.$.type">
