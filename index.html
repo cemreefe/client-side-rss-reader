@@ -26,7 +26,8 @@
           <button @click="fetchFeeds" id="fetchFeedsButton" title="sync"><img class='buttonLogo' src="/static/img/sync.png"></button>
           <button @click="bookmarkMe" title="bookmark"><img class='buttonLogo' src="/static/img/bookmark.png"></button>
           <button @click="toggleAdvancedSettings" title="toggleAdvancedSettings"><img class='buttonLogo' src="/static/img/settings.png"></button>
-          <button @click="expandAllToggle" title="Expand All">E</button>
+          <button id="toggleDarkMode" title="toggle dark mode"><img class='buttonLogo' src="/static/img/moon.png"></button>
+          <!-- <button @click="expandAllToggle" title="Expand All">E</button> -->
         </div>
         <div id="advanced-settings">
           <b>Advanced Settings</b>
@@ -59,11 +60,6 @@
             <tr>
               <td colspan="2">
                 <button @click="invalidateCache">Invalidate Cache</button>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <button id="toggleDarkMode">Toggle Dark Mode</button>
               </td>
             </tr>
           </table>
