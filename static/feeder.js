@@ -236,8 +236,33 @@ new Vue({
             return;
           }
 
-          const response = await fetchWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, this.responseTruncationLimitKB);
+          // Go over all proxies until a usable response is received.
+          const proxies = [
+            "https://api.allorigins.win/raw?url=",
+            "https://corsproxy.io/?url=",
+            "https://test.cors.workers.dev/?",
+            "", // Oh hey, what if they _do_ allow CORS?
+          ]
+          let response = null;
+          for (let i = 0; i < proxies.length; i++) {
+            let proxy = proxies[i];
+            const feedProxyUrl = `${proxy}${encodeURIComponent(url)}`;
+            try {
+              response = await fetchWithPartialResponse(feedProxyUrl, this.responseTruncationLimitKB);
+              if (!!response && response.status == "200") {
+                console.log(`Succeeded with proxy ${i} (${proxy}): ${url}`)
+                break
+              };
+            }
+            catch {}; // No-op, continue.
+          } 
+          
+          if (!response || response.status != 200) {
+            // Don't try to parse an error message from the req response.
+            return;
+          }
 
+          // const response = await fetchWithPartialResponse(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, this.responseTruncationLimitKB);
           const feed_text = response.truncated ? closeTruncatedFeed(response.data) : response.data;
           if (!feed_text) return;
           const feed = await parser.parseString(feed_text) ;
