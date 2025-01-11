@@ -11,7 +11,12 @@ function setCache(url, data) {
     timestamp: Date.now(),
     data,
   };
-  localStorage.setItem(cacheKey, JSON.stringify(cachedData));
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify(cachedData));
+  }
+  catch {
+    console.log("Cache set failed.");
+  }
 }
 
 function getCache(url, ttl) {
