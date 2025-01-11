@@ -212,6 +212,7 @@ new Vue({
       this.feeds = [];
       this.unfilteredFeeds = []; // Clear unfiltered results
       this.currentPage = 1;
+      this.kindleMode = false;
       const parser = new RSSParser({
         customFields: {
           item: [

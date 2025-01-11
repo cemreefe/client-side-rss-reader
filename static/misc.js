@@ -71,3 +71,15 @@ function generateOpml() {
     // Remove the link after triggering the download
     document.body.removeChild(downloadLink);
 }
+
+// Complete sudden scrolls for kindle mode
+function scrollInternal(element, direction) {
+    const targetDiv = document.getElementById(element.getAttribute("targetId"));
+    targetDiv.scrollBy(0, targetDiv.offsetHeight * direction);
+  }
+  function scrollInternalNext (element) {
+    scrollInternal(element, 1);
+  }
+  function scrollInternalPrev (element) {
+    scrollInternal(element, -1);
+  }
