@@ -337,12 +337,14 @@ new Vue({
     loadFeedsFromQuery() {
       const urlParams = new URLSearchParams(window.location.search);
       const feeds = urlParams.get('feeds');
+      console.log(urlParams.get('kindleMode'))
+      console.log(urlParams.get('kindleMode') === 'true')
       if (feeds) {
         this.rssInput = feeds.split(',').join(', ');
         this.cacheTTL = Number(urlParams.get('ttl')) || this.cacheTTL;
         this.blocklist = urlParams.get('blocklist') || this.blocklist;
         this.responseTruncationLimitKB = Number(urlParams.get('truncLim')) || this.responseTruncationLimitKB;
-        this.kindleMode = urlParams.get('kindleMode') == 'true';
+        this.kindleMode = urlParams.get('kindleMode') === 'true';
         this.fetchFeeds();
       }
     },
@@ -365,7 +367,7 @@ new Vue({
         ttl: this.cacheTTL, 
         blocklist: this.blocklist, 
         truncLim: this.responseTruncationLimitKB,
-        kindleMode: this.kindleMode,
+        kindleMode: this.kindleMode === true || this.kindleMode === "true",
       };
       const queryString = new URLSearchParams(queryParams).toString();
       history.replaceState(null, null, `?${queryString}`);

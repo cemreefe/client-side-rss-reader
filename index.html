@@ -99,6 +99,12 @@
       <div v-if="error" style="margin-top:1em;">{{ error }}</div>
       <br>
 
+      <style v-if="kindleMode">
+        div.description {
+          overflow: hidden;
+        }
+      </style>
+
       <div v-for="(item, index) in paginatedFeeds" :key="index" class="feed-item">
         <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
         <a href="#" @click.prevent="showDescription(item)" class="post-title">{{ !!item.title ? item.title : "Post" }}</a>
