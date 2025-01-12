@@ -128,4 +128,3 @@ function clearReadPosts() {
   // Reload the page to update the read status
   location.reload();
 }
-// This ^ doesnt work be
