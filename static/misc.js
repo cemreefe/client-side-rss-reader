@@ -83,3 +83,49 @@ function scrollInternalNext (element) {
 function scrollInternalPrev (element) {
   scrollInternal(element, -1);
 }
+// Download read post urls list as backup
+function downloadReadPosts() {
+  let readPostUrls = localStorage.getItem('readPostUrls') || "[]";
+  let readPostsBlob = new Blob([readPostUrls], {type: "text/plain"});
+  let downloadLink = document.createElement("a");
+  downloadLink.href = URL.createObjectURL(readPostsBlob);
+  downloadLink.download = "readPostUrls.list.json";
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+}
+// Upload read post urls list
+function uploadReadPosts(overwrite) {
+  let fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".json";
+  fileInput.onchange = function() {
+    let file = fileInput.files[0];
+    let reader = new FileReader();
+    reader.onload = function() {
+        let readPostUrls = JSON.parse(localStorage.getItem('readPostUrls')) || [];
+        let newReadPostUrls = JSON.parse(reader.result);
+        if (overwrite) {
+            readPostUrls = newReadPostUrls;
+        } else {
+            readPostUrls = Array.from(new Set(readPostUrls.concat(newReadPostUrls)));
+        }
+        localStorage.setItem('readPostUrls', JSON.stringify(readPostUrls));
+        // Reload the page to update the read status
+        location.reload();
+    };
+    reader.readAsText(file);
+  };
+  fileInput.click();
+}
+// Clear read post urls list
+function clearReadPosts() {
+  // Get confirmation from the user
+  if (!confirm("Are you sure you want to clear all read posts? This action cannot be undone without a backup.")) {
+    return;
+  }
+  localStorage.removeItem('readPostUrls');
+  // Reload the page to update the read status
+  location.reload();
+}
+// This ^ doesnt work be

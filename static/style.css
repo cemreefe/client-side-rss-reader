@@ -98,6 +98,10 @@ table, th, td {
     justify-content: space-between;
     align-items: center;
 }
+.postTitleBox {
+    display: flex;
+    justify-content: space-between;
+}
 #advanced-settings {
     display: none;
     margin-top: 1em;
@@ -123,4 +127,7 @@ figure {
 /* For substack's subscribe form! */
 .subscription-widget-wrap-editor {
     display: none;
+}
+.is-read-true {
+    opacity: 0.5;
 }
