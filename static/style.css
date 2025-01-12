@@ -109,7 +109,7 @@ table, th, td {
     border: none;
 }
 #before-buttons {
-    min-height: 85vh;
+    min-height: 80vh;
 } 
 .buttonLogo {
     height: 0.9em;

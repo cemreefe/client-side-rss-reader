@@ -62,7 +62,7 @@
                 <label for="kindleMode">Kindle mode (content navigation buttons)</label>
               </td>
               <td>
-                <input type="checkbox" id="kindleMode" v-model="kindleMode" @input="updateUrlParams">
+                <input type="checkbox" id="kindleMode" v-model="kindleMode" @change="updateUrlParams">
               </td>
             </tr>
             <tr>
@@ -137,6 +137,7 @@
       <button @click="currentPage++" :disabled="currentPage === totalPages">Next</button>
     </div>
   </div>
+  <div v-if="kindleMode" style="height:100vh;"></div>
   <script src="/static/misc.js"></script>
   <script src="/static/feeder.js"></script>
 </body>
