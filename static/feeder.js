@@ -245,7 +245,6 @@ new Vue({
               mediaContent: item.mediaContent,
               mediaGroup: item.mediaGroup,
             })));
-            console.log(this.unfilteredFeeds)
             console.log("Fetched feed items: " + this.unfilteredFeeds.length)
             this.updateFilteredFeeds(); // Update the filtered feeds whenever new data is added
             return;
@@ -294,7 +293,6 @@ new Vue({
             mediaContent: item.mediaContent,
             mediaGroup: item.mediaGroup,
           })));
-          console.log(this.unfilteredFeeds)
           console.log("Fetched feed items: " + this.unfilteredFeeds.length)
           this.updateFilteredFeeds(); // Update the filtered feeds as we go
         } catch (err) {
@@ -356,20 +354,14 @@ new Vue({
       if (readPostUrls) {
         this.readPostUrlsList = JSON.parse(readPostUrls);
       }
-      console.log("Loaded read post URLs from local storage.");
-      console.log(this.readPostUrlsList);
     },
     markAsRead(postUrl) {
-      console.log("Marking as read:", postUrl);
       this.readPostUrlsList.push(postUrl);
       localStorage.setItem('readPostUrls', JSON.stringify(this.readPostUrlsList));
-      console.log("Marked as read:", localStorage.getItem('readPostUrls'));
     },
     markAsUnread(postUrl) {
-      console.log("Marking as unread:", postUrl);
       this.readPostUrlsList = this.readPostUrlsList.filter(url => url !== postUrl);
       localStorage.setItem('readPostUrls', JSON.stringify(this.readPostUrlsList));
-      console.log("Marked as unread:", localStorage.getItem('readPostUrls'));
     },
     isReadPost(postUrl) {
       return this.readPostUrlsList.includes(postUrl);

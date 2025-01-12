@@ -17,9 +17,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Start with feeds input open if no feeds 
 document.addEventListener('DOMContentLoaded', function () {
-    console.log(document.getElementById("rssInput").value);
     if(document.getElementById("rssInput").value.length == 0) {
-    document.getElementById('feedDetails').open = true;
+        document.getElementById('feedDetails').open = true;
     }
 });
 
