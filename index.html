@@ -105,9 +105,9 @@
         }
       </style>
 
-      <div v-for="(item, index) in paginatedFeeds" :key="index" class="feed-item">
+      <div v-for="(item, index) in paginatedFeeds" :key="index" class="feed-item" :id="'item' + index">
         <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
-        <a href="#" @click.prevent="showDescription(item)" class="post-title">{{ !!item.title ? item.title : "Post" }}</a>
+        <a href="#" @click.prevent="showDescription(item); kindleMode ? document.getElementById('item' + index).scrollIntoView(true) : 0" class="post-title">{{ !!item.title ? item.title : "Post" }}</a>
         <div v-if="item.showDescription" class="description" :id="'description' + index">
           <div v-if="!item.contentEncoded" v-html="item.content"></div>
           <div v-html="item.contentEncoded"></div>
