@@ -20,6 +20,9 @@ body.dark-mode {
     --button-color: gray;
     --input-background: darkgray;
 }
+body.dark-mode button {
+    background-color: dimgrey;
+}
 body {
     background-color: var(--background-color);
     color: var(--text-color);
