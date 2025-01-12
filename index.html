@@ -66,6 +66,30 @@
               </td>
             </tr>
             <tr>
+              <td>
+                <label for="markAsReadEnabled">Enable 'mark as read'</label>
+              </td>
+              <td>
+                <input type="checkbox" id="markAsReadEnabled" v-model="markAsReadEnabled" @change="updateUrlParams">
+              </td>
+            </tr>
+            <tr v-if="markAsReadEnabled">
+              <td>
+                <label for="hideReadPosts">&nbsp; Hide posts marked as read</label>
+              </td>
+              <td>
+                <input type="checkbox" id="hideReadPosts" v-model="hideReadPosts" @change="updateUrlParams">
+              </td>
+            </tr>
+            <tr v-if="markAsReadEnabled">
+              <td>
+                <label>&nbsp; Read posts list</label>
+              </td>
+              <td>
+                <button @click="downloadReadPosts()">Export</button> <button @click="uploadReadPosts(false)">Import</button> <button @click="clearReadPosts()">Clear</button>
+              </td>
+            </tr>
+            <tr>
               <td colspan="2">
                 <button @click="invalidateCache">Invalidate Cache</button>
               </td>
@@ -102,12 +126,26 @@
       <style v-if="kindleMode">
         div.description {
           overflow: hidden;
+          max-height: 75vh;
         }
       </style>
 
-      <div v-for="(item, index) in paginatedFeeds" :key="index" class="feed-item" :id="'item' + index">
+      <div 
+        v-for="(item, index) in paginatedFeeds" 
+        v-if="!markAsReadEnabled || !hideReadPosts || !isReadPost(item.link)" 
+        :class="`feed-item ${markAsReadEnabled && isReadPost(item.link) ? 'is-read-true' : ''}`" 
+        :key="index" 
+        :id="'item' + index"
+      >
         <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
-        <a href="#" @click.prevent="showDescription(item); kindleMode ? document.getElementById('item' + index).scrollIntoView(true) : 0" class="post-title">{{ !!item.title ? item.title : "Post" }}</a>
+        <div class="postTitleBox">
+          <a href="#" 
+            @click.prevent="showDescription(item); kindleMode ? document.getElementById('item' + index).scrollIntoView(true) : 0" 
+            class="post-title">{{ !!item.title ? item.title : "Post" }}</a>
+          <button v-if="markAsReadEnabled && !isReadPost(item.link)" @click="markAsRead(item.link)">Mark as read</button>
+          <button v-if="markAsReadEnabled && isReadPost(item.link)" @click="markAsUnread(item.link)">Mark as unread</button>
+        </div>
+        
         <div v-if="item.showDescription" class="description" :id="'description' + index">
           <div v-if="!item.contentEncoded" v-html="item.content"></div>
           <div v-html="item.contentEncoded"></div>

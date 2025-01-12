@@ -172,7 +172,10 @@ new Vue({
     blocklist: '', // Default blocklist
     advancedSettingsVisible: false,
     expandAll: false,
-    kindleMode: false
+    kindleMode: false,
+    markAsReadEnabled: false,
+    hideReadPosts: false,
+    readPostUrlsList: [],
   },
   computed: {
     paginatedFeeds() {
@@ -343,8 +346,33 @@ new Vue({
         this.blocklist = urlParams.get('blocklist') || this.blocklist;
         this.responseTruncationLimitKB = Number(urlParams.get('truncLim')) || this.responseTruncationLimitKB;
         this.kindleMode = (urlParams.get('kindleMode') === 'true');
+        this.markAsReadEnabled = (urlParams.get('markAsReadEnabled') === 'true');
+        this.hideReadPosts = (urlParams.get('hideReadPosts') === 'true');
         this.fetchFeeds();
       }
+    },
+    loadReadPostUrlsFromLocalStorage() {
+      const readPostUrls = localStorage.getItem('readPostUrls');
+      if (readPostUrls) {
+        this.readPostUrlsList = JSON.parse(readPostUrls);
+      }
+      console.log("Loaded read post URLs from local storage.");
+      console.log(this.readPostUrlsList);
+    },
+    markAsRead(postUrl) {
+      console.log("Marking as read:", postUrl);
+      this.readPostUrlsList.push(postUrl);
+      localStorage.setItem('readPostUrls', JSON.stringify(this.readPostUrlsList));
+      console.log("Marked as read:", localStorage.getItem('readPostUrls'));
+    },
+    markAsUnread(postUrl) {
+      console.log("Marking as unread:", postUrl);
+      this.readPostUrlsList = this.readPostUrlsList.filter(url => url !== postUrl);
+      localStorage.setItem('readPostUrls', JSON.stringify(this.readPostUrlsList));
+      console.log("Marked as unread:", localStorage.getItem('readPostUrls'));
+    },
+    isReadPost(postUrl) {
+      return this.readPostUrlsList.includes(postUrl);
     },
     invalidateCache() {
       Object.keys(localStorage).forEach(key => {
@@ -366,6 +394,8 @@ new Vue({
         blocklist: this.blocklist, 
         truncLim: this.responseTruncationLimitKB,
         kindleMode: this.kindleMode === true || this.kindleMode === "true",
+        markAsReadEnabled: this.markAsReadEnabled === true || this.markAsReadEnabled === "true",
+        hideReadPosts: this.hideReadPosts === true || this.hideReadPosts === "true",
       };
       const queryString = new URLSearchParams(queryParams).toString();
       history.replaceState(null, null, `?${queryString}`);
@@ -412,5 +442,6 @@ new Vue({
   },
   mounted() {
     this.loadFeedsFromQuery();
+    this.loadReadPostUrlsFromLocalStorage();
   },
 });
