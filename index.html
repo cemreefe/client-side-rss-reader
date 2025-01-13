@@ -142,8 +142,12 @@
           <a href="#" 
             @click.prevent="showDescription(item); kindleMode ? document.getElementById('item' + index).scrollIntoView(true) : 0" 
             class="post-title">{{ !!item.title ? item.title : "Post" }}</a>
-          <button v-if="markAsReadEnabled && !isReadPost(item.link)" @click="markAsRead(item.link)">Mark as read</button>
-          <button v-if="markAsReadEnabled && isReadPost(item.link)" @click="markAsUnread(item.link)">Mark as unread</button>
+          <button v-if="markAsReadEnabled && !isReadPost(item.link)" @click="markAsRead(item.link)">
+            <img class='buttonLogo' src="/static/img/mark-read.png">
+          </button>
+          <button v-if="markAsReadEnabled && isReadPost(item.link)" @click="markAsUnread(item.link)">
+            <img class='buttonLogo' src="/static/img/mark-unread.png">
+          </button>
         </div>
         
         <div v-if="item.showDescription" class="description" :id="'description' + index">
