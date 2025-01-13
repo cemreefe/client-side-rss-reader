@@ -73,8 +73,9 @@ function generateOpml() {
 
 // Complete sudden scrolls for kindle mode
 function scrollInternal(element, direction) {
+  const scrollPadding = 40; // Don't scroll complete height, let user see some part of the next/prev page
   const targetDiv = document.getElementById(element.getAttribute("targetId"));
-  targetDiv.scrollBy(0, targetDiv.offsetHeight * direction);
+  targetDiv.scrollBy(0, (targetDiv.offsetHeight - scrollPadding) * direction);
 }
 function scrollInternalNext (element) {
   scrollInternal(element, 1);
