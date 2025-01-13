@@ -108,7 +108,7 @@
           <textarea id="rssInput" v-model="rssInput" placeholder="Enter RSS feeds separated by a comma"></textarea>  
           <button @click="fetchFeeds">Fetch</button>
           <button @click="generateOpml">Export OPML</button>
-          <input type="button" id="loadFileXml" value="Import OPML"onclick="document.getElementById('fileSelector').click();">
+          <button id="loadFileXml" onclick="document.getElementById('fileSelector').click();">Import OPML</button>
           <input id="fileSelector" type="file" @change="handleFileUpload" accept=".opml,.xml" hidden>
         </details>
       </div>
