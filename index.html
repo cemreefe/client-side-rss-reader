@@ -140,7 +140,7 @@
         <div class="meta">{{ formatDate(item.pubDate) }} | {{ item.feedTitle }}</div>
         <div class="postTitleBox">
           <a href="#" 
-            @click.prevent="showDescription(item); kindleMode ? document.getElementById('item' + index).scrollIntoView(true) : 0" 
+            @click.prevent="toggleDescription(item); kindleMode ? document.getElementById('item' + index).scrollIntoView(true) : 0" 
             class="post-title">{{ !!item.title ? item.title : "Post" }}</a>
           <button v-if="markAsReadEnabled && !isReadPost(item.link)" @click="markAsRead(item.link)">
             <img class='buttonLogo' src="/static/img/mark-read.png">
@@ -178,8 +178,8 @@
       <span>Page {{ currentPage }} of {{ totalPages }}</span>
       <button @click="currentPage++" :disabled="currentPage === totalPages">Next</button>
     </div>
+    <div v-if="kindleMode" style="height:100vh;"></div>
   </div>
-  <div v-if="kindleMode" style="height:100vh;"></div>
   <script src="/static/misc.js"></script>
   <script src="/static/feeder.js"></script>
 </body>

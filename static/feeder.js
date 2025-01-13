@@ -161,7 +161,7 @@ new Vue({
   el: '#app',
   data: {
     rssInput: '',
-    feeds: [],
+    unfilteredFeeds: [],
     loading: false,
     loadingUrls: new Set(),
     error: null,
@@ -180,20 +180,24 @@ new Vue({
   computed: {
     paginatedFeeds() {
       const start = (this.currentPage - 1) * this.pageSize;
-      return this.filteredFeeds.slice(start, start + this.pageSize);
+      return this.sortedFeeds.slice(start, start + this.pageSize);
     },
     filteredFeeds() {
-      if (isBlank(this.blocklist)) {
-        return this.sortedFeeds;
-      }
-      const blocks = this.blocklist.split(',').map(word => word.trim().toLowerCase()).filter(block => block !== '');
-      return this.sortedFeeds.filter(feed => {
+      console.log("Updating filtered feeds");
+      const blocks = isBlank(this.blocklist) ? [] : (this.blocklist.split(',').map(word => word.trim().toLowerCase())).filter(block => block !== '');
+      return this.unfilteredFeeds.filter(feed => {
         const content = `${feed.title} ${feed.content}`.toLowerCase();
-        return !blocks.some(block => content.includes(block));
+        const isNotBlocked = !blocks.some(block => content.includes(block));
+        const isReadOrShowRead = !this.hideReadPosts || !this.isReadPost(feed.link);
+        return isNotBlocked && isReadOrShowRead;
       });
     },
     sortedFeeds() {
-      return this.feeds.sort((a, b) => {
+      if (!this.filteredFeeds) {
+        console.log("No unfiltered feeds")
+        return [];
+      }
+      return this.filteredFeeds.sort((a, b) => {
         bDate = !!b.pubDate ? new Date(b.pubDate) : new Date(0);
         aDate = !!a.pubDate ? new Date(a.pubDate) : new Date(0);
         return bDate - aDate;
@@ -213,7 +217,6 @@ new Vue({
       this.loading = true;
       this.loadingUrls = new Set();
       this.error = null;
-      this.feeds = [];
       this.unfilteredFeeds = []; // Clear unfiltered results
       this.currentPage = 1;
       const parser = new RSSParser({
@@ -245,8 +248,11 @@ new Vue({
               mediaContent: item.mediaContent,
               mediaGroup: item.mediaGroup,
             })));
-            console.log("Fetched feed items: " + this.unfilteredFeeds.length)
-            this.updateFilteredFeeds(); // Update the filtered feeds whenever new data is added
+            console.log("unfilteredFeeds: ", this.unfilteredFeeds)
+            console.log("sortedFeeds: " , this.sortedFeeds)
+            console.log("filteredFeeds: " , this.sortedFeeds)
+            console.log("Fetched feed items: " , this.filteredFeeds.length)
+            // this.updateFilteredFeeds(); // Update the filtered feeds whenever new data is added
             return;
           }
 
@@ -293,8 +299,11 @@ new Vue({
             mediaContent: item.mediaContent,
             mediaGroup: item.mediaGroup,
           })));
-          console.log("Fetched feed items: " + this.unfilteredFeeds.length)
-          this.updateFilteredFeeds(); // Update the filtered feeds as we go
+          console.log("unfilteredFeeds: ", this.unfilteredFeeds)
+          console.log("sortedFeeds: ", this.sortedFeeds)
+          console.log("filteredFeeds: ", this.sortedFeeds)
+          console.log("Fetched feed items: ", this.unfilteredFeeds.length)
+          // this.updateFilteredFeeds(); // Update the filtered feeds as we go
         } catch (err) {
           console.error(`Failed to fetch feed from ${url}:`, err);
         }
@@ -308,25 +317,15 @@ new Vue({
 
       this.loading = false; // Set loading to false after all feeds have been processed
     },
-    updateFilteredFeeds() {
-      const blocks = isBlank(this.blocklist) ? [] : (this.blocklist.split(',').map(word => word.trim().toLowerCase())).filter(block => block !== '');
-      this.feeds = this.unfilteredFeeds.filter(feed => {
-        const content = `${feed.title} ${feed.content}`.toLowerCase();
-        return !blocks.some(block => content.includes(block));
-      });
-    },
-    showDescription(item) {
-      this.feeds = this.feeds.map(feedItem => ({
-        ...feedItem,
-        showDescription: feedItem === item ? !feedItem.showDescription : feedItem.showDescription,
-      }));
+    toggleDescription(item) {
+      item.showDescription = !item.showDescription;
     },
     closeDescription(item) {
       item.showDescription = false;
     },
     expandAllToggle() {
       this.expandAll = !this.expandAll;
-      this.feeds = this.feeds.map(feedItem => ({
+      this.filteredFeeds = this.filteredFeeds.map(feedItem => ({
         ...feedItem,
         showDescription: this.expandAll,
       }));
@@ -358,10 +357,12 @@ new Vue({
     markAsRead(postUrl) {
       this.readPostUrlsList.push(postUrl);
       localStorage.setItem('readPostUrls', JSON.stringify(this.readPostUrlsList));
+      // this.updateFilteredFeeds();
     },
     markAsUnread(postUrl) {
       this.readPostUrlsList = this.readPostUrlsList.filter(url => url !== postUrl);
       localStorage.setItem('readPostUrls', JSON.stringify(this.readPostUrlsList));
+      // this.updateFilteredFeeds();
     },
     isReadPost(postUrl) {
       return this.readPostUrlsList.includes(postUrl);
