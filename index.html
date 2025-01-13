@@ -163,7 +163,8 @@
             </p>
           </div>
           <a :href="item.link" target="_blank"><button>Read on {{ item.feedTitle }}</button></a>
-          <button @click="closeDescription(item)">Close</button>
+          <button @click="closeDescription(item)">Close</button> 
+          <button v-if="markAsReadEnabled" @click="closeDescription(item); markAsRead(item.link); ">Close & mark as read</button>
         </div>
         <div v-if="kindleMode && item.showDescription">
           <div class="postInternalPagination pagination">
