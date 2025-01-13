@@ -186,7 +186,7 @@ new Vue({
       if (isBlank(this.blocklist)) {
         return this.sortedFeeds;
       }
-      const blocks = this.blocklist.split(',').map(word => word.trim().toLowerCase());
+      const blocks = this.blocklist.split(',').map(word => word.trim().toLowerCase()).filter(block => block !== '');
       return this.sortedFeeds.filter(feed => {
         const content = `${feed.title} ${feed.content}`.toLowerCase();
         return !blocks.some(block => content.includes(block));
@@ -309,7 +309,7 @@ new Vue({
       this.loading = false; // Set loading to false after all feeds have been processed
     },
     updateFilteredFeeds() {
-      const blocks = isBlank(this.blocklist) ? [] : this.blocklist.split(',').map(word => word.trim().toLowerCase());
+      const blocks = isBlank(this.blocklist) ? [] : (this.blocklist.split(',').map(word => word.trim().toLowerCase())).filter(block => block !== '');
       this.feeds = this.unfilteredFeeds.filter(feed => {
         const content = `${feed.title} ${feed.content}`.toLowerCase();
         return !blocks.some(block => content.includes(block));
