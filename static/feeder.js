@@ -213,6 +213,20 @@ new Vue({
     },
   },
   methods: {
+    preprocessContent(content, item) {
+      // Replace relative URLs with absolute URLs (not just image)
+      if (!content) return content;
+
+      var _content = content;
+      const sourceLocation = new URL(item.link);
+      // Assume content is HTML
+      // Use regex
+      const originRelativeSrcRegex = /(src|href)=(("\/([^"]+)")|('\/([^']+)'))/g;
+      const pathRelativeSrcRegex = /(src|href)=(("\.\/([^"]+)")|('\.\/([^']+)'))/g;
+      _content = _content.replaceAll(originRelativeSrcRegex, `$1="${sourceLocation.origin}/$4$6"`);
+      _content = _content.replaceAll(pathRelativeSrcRegex, `$1="${sourceLocation.origin}${sourceLocation.pathname}/$4$6"`);
+      return _content;
+    },
     async fetchFeeds() {
       this.loading = true;
       this.loadingUrls = new Set();
@@ -241,8 +255,8 @@ new Vue({
               title: item.title,
               link: item.link,
               pubDate: item.pubDate,
-              content: item.content,
-              contentEncoded: item.contentEncoded,
+              content: this.preprocessContent(item.content, item),
+              contentEncoded: this.preprocessContent(item.contentEncoded, item),
               feedTitle: cachedFeed.title,
               showDescription: false,
               mediaContent: item.mediaContent,
@@ -292,8 +306,8 @@ new Vue({
             title: item.title,
             link: item.link,
             pubDate: item.pubDate,
-            content: item.content,
-            contentEncoded: item.contentEncoded,
+            content: this.preprocessContent(item.content, item),
+            contentEncoded: this.preprocessContent(item.contentEncoded, item),
             feedTitle: feed.title,
             showDescription: false,
             mediaContent: item.mediaContent,
