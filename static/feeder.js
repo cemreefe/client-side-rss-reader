@@ -176,6 +176,7 @@ new Vue({
     markAsReadEnabled: false,
     hideReadPosts: false,
     readPostUrlsList: [],
+    statusCodeReport: {},
   },
   computed: {
     paginatedFeeds() {
@@ -183,7 +184,6 @@ new Vue({
       return this.sortedFeeds.slice(start, start + this.pageSize);
     },
     filteredFeeds() {
-      console.log("Updating filtered feeds");
       const blocks = isBlank(this.blocklist) ? [] : (this.blocklist.split(',').map(word => word.trim().toLowerCase())).filter(block => block !== '');
       return this.unfilteredFeeds.filter(feed => {
         const content = `${feed.title} ${feed.content}`.toLowerCase();
@@ -262,11 +262,6 @@ new Vue({
               mediaContent: item.mediaContent,
               mediaGroup: item.mediaGroup,
             })));
-            console.log("unfilteredFeeds: ", this.unfilteredFeeds)
-            console.log("sortedFeeds: " , this.sortedFeeds)
-            console.log("filteredFeeds: " , this.sortedFeeds)
-            console.log("Fetched feed items: " , this.filteredFeeds.length)
-            // this.updateFilteredFeeds(); // Update the filtered feeds whenever new data is added
             return;
           }
 
@@ -291,9 +286,16 @@ new Vue({
             }
             catch {}; // No-op, continue.
           } 
-          this.loadingUrls.delete(url)
-          
-          if (!response || response.status != 200) {
+          this.loadingUrls.delete(url);
+
+          const statusCode = !!response ? response.status : "Failed";
+          if (!this.statusCodeReport[statusCode]) {
+            this.statusCodeReport[statusCode] = [];
+          }
+          this.statusCodeReport[statusCode].push(url);
+        
+          if (statusCode != 200) {
+            console.error(`Failed to fetch feed from ${url}`);
             // Don't try to parse an error message from the req response.
             return;
           }
@@ -313,11 +315,6 @@ new Vue({
             mediaContent: item.mediaContent,
             mediaGroup: item.mediaGroup,
           })));
-          console.log("unfilteredFeeds: ", this.unfilteredFeeds)
-          console.log("sortedFeeds: ", this.sortedFeeds)
-          console.log("filteredFeeds: ", this.sortedFeeds)
-          console.log("Fetched feed items: ", this.unfilteredFeeds.length)
-          // this.updateFilteredFeeds(); // Update the filtered feeds as we go
         } catch (err) {
           console.error(`Failed to fetch feed from ${url}:`, err);
         }
@@ -330,6 +327,9 @@ new Vue({
       await Promise.all(feedPromises);
 
       this.loading = false; // Set loading to false after all feeds have been processed
+      console.log("Finished fetching feeds.");
+      console.log("Status code report per feed", this.statusCodeReport);
+      console.log("Feeds, filtered & sorted:", this.sortedFeeds);
     },
     toggleDescription(item) {
       item.showDescription = !item.showDescription;
