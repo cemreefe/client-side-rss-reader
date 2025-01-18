@@ -1,13 +1,13 @@
 :root {
     /* Light mode colors */
     --background-color: white;
-    --text-color: black;
+    --text-color: #222222;
     --link-color: royalblue;
     --border-color: #aaa;
     --metadata-color: #555;
     --header-separator-color: #c9c9c9;
-    --button-color: buttonface;
     --input-background: white;
+    --title-color: black;
 }
 body.dark-mode {
     /* Dark mode colors */
@@ -17,9 +17,10 @@ body.dark-mode {
     --border-color: #3C3D37;
     --metadata-color: #aaa;
     --header-separator-color: #aaa;
-    --button-color: gray;
     --input-background: darkgray;
+    --title-color: burlywood;
 }
+/* This hack is needed because buttons act weird if you introduce a bg color in light mode */
 body.dark-mode button {
     background-color: dimgrey;
 }
@@ -133,4 +134,7 @@ figure {
 }
 .is-read-true {
     opacity: 0.5;
+}
+.description h1, .description h2, .description h3, .description h4 {
+    color: var(--title-color);
 }
