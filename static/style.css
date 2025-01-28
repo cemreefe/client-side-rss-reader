@@ -68,7 +68,7 @@ textarea {
     display: block;
     float: none;
     height: unset;
-    width: unset;
+    /* width: unset; More bugs with this than without. */ 
 }
 .description p:has(img), .description p:has(video) {
     text-align: center;
