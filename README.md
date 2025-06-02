@@ -40,7 +40,7 @@ A simple client-side RSS aggregator built with Vue.js. This application allows u
       every feed fetch request when a certain response size is hit. The higher this number is, the
       more posts you can fetch, and the more chance the request will timeout and return no feeds
       (improvements coming soon!).
-   4. Use **kindle mode** to use this feed with your kindle. The kindle mode aut-adjusts the page location
+   4. Use **kindle mode** to use this feed with your kindle. The kindle mode auto-adjusts the page location
       based on the post you're viewing and gives you handy buttons to traverse posts so that you won't
       have to scroll.
    5. Enable **mark-as-read** if you'd like to keep track of what you have or haven't read.
